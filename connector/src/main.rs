@@ -872,7 +872,7 @@ async fn main() {
 	}
 }
 
-/// GreenTeaSpeak servers report versions like `2.5.1 [Build: …]`.
+/// VoySpeak (formerly GreenTeaSpeak) servers report versions like `2.5.1 [Build: …]`.
 /// Classic TeaSpeak reports `TeaSpeak 1.4.21-beta [Build: …]` — not a GTS host.
 /// Classic TeamSpeak 3 reports `3.13.8 [Build: …]` — must not use GTS labels.
 fn is_greenteaspeak_server_version(version: &str) -> bool {
@@ -902,12 +902,12 @@ fn format_server_license(license: LicenseType, version: &str) -> String {
 		return match license {
 			LicenseType::Offline => "Private".into(),
 			LicenseType::Sdk => "Premium".into(),
-			LicenseType::SdkOffline => "Authorized GreenTeaSpeak Host Provider".into(),
+			LicenseType::SdkOffline => "Authorized VoySpeak Host Provider".into(),
 			_ => "Keine Lizenz".into(),
 		};
 	}
 	if version.trim().to_ascii_lowercase().starts_with("teaspeak") {
-		return "Kein GreenTeaSpeak-Server".into();
+		return "Kein VoySpeak-Server".into();
 	}
 	match license {
 		LicenseType::NoLicense => "No License".into(),
@@ -936,8 +936,8 @@ fn friendly_connect_error(address: &str, e: tsclientlib::Error) -> anyhow::Error
 	{
 		return anyhow::anyhow!(
 			"Could not connect to \"{address}\": this server rejects this client type (error 533). \
-GreenTeaSpeak public servers often only allow the official GreenTeaSpeak desktop client. \
-Try a self-hosted TeaSpeak with TeamSpeak-compat enabled, or use GreenTeaSpeak 2 for ts.greenteaspeak.de."
+VoySpeak (formerly GreenTeaSpeak) public servers often only allow the official VoySpeak desktop client. \
+Try a self-hosted TeaSpeak with TeamSpeak-compat enabled, or use the VoySpeak desktop client."
 		);
 	}
 	if raw.contains("BlockedTarget") {
