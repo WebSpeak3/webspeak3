@@ -3028,6 +3028,9 @@ type NewsItem =
 
 const NEWS_DISMISSED_STORAGE_KEY = "webspeak3.newsTicker.dismissed";
 
+/** Hash links that open a dialog in this client (#about, #options/<section>). */
+const isInAppHash = (hash: string) => hash === "#about" || OPTIONS_SECTIONS.some((s) => hash === `#options/${s.id}`);
+
 // Like the scrolling news line at the bottom of the native TS3 client.
 // Dismissing hides the current set of items until a new one shows up.
 function NewsTicker() {
@@ -3074,9 +3077,13 @@ function NewsTicker() {
         : item.text;
   const entries = items.map((item) => {
     const url = item.kind === "theme" ? undefined : item.url;
+    // https://…/#options/konto or #about: open the dialog here instead of a new tab.
+    const inApp = url && isInAppHash(new URL(url).hash);
     return (
       <span key={item.id} className="ts-news-item">
-        {url ? (
+        {inApp ? (
+          <a href={new URL(url).hash}>{label(item)}</a>
+        ) : url ? (
           <a href={url} target="_blank" rel="noopener noreferrer">
             {label(item)}
           </a>
@@ -9142,6 +9149,19 @@ function AppInner() {
   const linkedOptionsSection = OPTIONS_SECTIONS.find((s) => window.location.hash === `#options/${s.id}`)?.id;
   const [optionsDialogOpen, setOptionsDialogOpen] = useState(!!linkedOptionsSection);
   const [optionsSection, setOptionsSection] = useState<string>(linkedOptionsSection ?? OPTIONS_SECTIONS[0].id);
+  useEffect(() => {
+    const onHash = () => {
+      const hash = window.location.hash;
+      if (hash === "#about") setAboutOpen(true);
+      const section = OPTIONS_SECTIONS.find((s) => hash === `#options/${s.id}`)?.id;
+      if (section) {
+        setOptionsSection(section);
+        setOptionsDialogOpen(true);
+      }
+    };
+    window.addEventListener("hashchange", onHash);
+    return () => window.removeEventListener("hashchange", onHash);
+  }, []);
   const socketRef = useRef<WebSocket | DemoSocket | null>(null);
   /** Multi-join: one gateway WebSocket (+ connector) per session tab. */
   const [sessionTabs, setSessionTabs] = useState<SessionTabInfo[]>([]);
