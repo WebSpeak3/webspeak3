@@ -1,4 +1,4 @@
-# TeaSpeak / GreenTeaSpeak support (WebSpeak3)
+# TeaSpeak / VoySpeak (formerly GreenTeaSpeak) support (WebSpeak3)
 
 WebSpeak3 can speak the TeamSpeak 3/6 protocol via `ts-connector` / `tsclientlib`.
 TeaSpeak / GreenTeaSpeak servers need an extra identity handshake before `clientinit`.
@@ -12,7 +12,6 @@ TeaSpeak / GreenTeaSpeak servers need an extra identity handshake before `client
   answers that way — required for GreenTeaSpeak hubs that disable TeamSpeak clients
 - TEAMSPEAK identity handshake after crypto when needed
 - DNS SRV `_gts._udp` in addition to `_ts3._udp`
-- Design theme **GreenTeaSpeak** (third UI style)
 
 Verified against `ts.greenteaspeak.de` (Official GreenTeaSpeak Public Server).
 

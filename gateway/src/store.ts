@@ -36,7 +36,7 @@ const STORE_SCREENSHOT_RE = /^data:image\/(png|jpe?g|webp);base64,[A-Za-z0-9+/]+
 // grow unbounded from spam that slips past rate limiting (a fresh IP per
 // submission, say). Bounds worst case to ~300 * 450KB =~ 135MB in RAM.
 const STORE_MAX_THEMES = 300;
-const STORE_BASE_THEMES = new Set(["standard", "nova", "greenteaspeak", "pulse", "ide"]);
+const STORE_BASE_THEMES = new Set(["standard", "nova", "pulse", "ide"]);
 
 // A handful of names (the operator's own) that only whoever holds
 // STORE_ADMIN_TOKEN may publish under - stops anyone else from impersonating

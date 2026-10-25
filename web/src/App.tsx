@@ -232,10 +232,8 @@ import {
   type ChatSettings,
 } from "./chatlog";
 import {
-  GREENTEASPEAK_THEME_ID,
-  GreenteaSpeakChrome,
-  isGreenteaSpeakTheme,
-} from "./themes/greenteaspeak";
+  ConnectionTabs,
+} from "./ConnectionTabs";
 import { BARE_URL_REGEX, renderBbcode, wrapUrls } from "./lib/bbcode";
 import { parseChannelName, spacerDisplayName } from "./lib/spacer";
 import akimoPhoto from "./assets/akimo.jpg";
@@ -498,18 +496,18 @@ const CONTINUOUS_KEY = "webspeak3:continuous-transmission";
 const TYPING_ATTENUATION_KEY = "webspeak3:typing-attenuation";
 const PTT_BINDING_KEY = "webspeak3:ptt-key";
 const DESIGN_THEME_KEY = "webspeak3:design-theme";
-// The user's actual pick - "standard" | "nova" | "greenteaspeak" | "custom:<id>".
+// The user's actual pick - "standard" | "nova" | "pulse" | "ide" | "custom:<id>".
 // DESIGN_THEME_KEY above keeps tracking just the resolved structural base, since a
 // couple of early call sites (e.g. the host-field default below) need that cheaply,
 // before customThemes is loaded.
 const DESIGN_SELECTION_KEY = "webspeak3:design-selection";
 const CUSTOM_THEMES_KEY = "webspeak3:custom-themes";
 
-type DesignTheme = "standard" | "nova" | "greenteaspeak" | "pulse" | "ide";
+type DesignTheme = "standard" | "nova" | "pulse" | "ide";
 
 /** A user-authored theme package: a name, which built-in layout it behaves like
- *  (Standard's plain chrome, Nova's collapsed menu/splash, GreenTeaSpeak shell,
- *  or Pulse's card/sidebar layout), and raw CSS that gets injected while it's
+ *  (Standard's plain chrome, Nova's collapsed menu/splash, Pulse's card/sidebar
+ *  layout or IDE), and raw CSS that gets injected while it's
  *  active - free-form, so it can restyle or even reflow the existing markup
  *  (e.g. via flex `order`, `display:none`, overlays). */
 type CustomTheme = {
@@ -546,7 +544,7 @@ const STORE_SCREENSHOT_MAX_DATA_URL_LENGTH = 400_000;
 
 function isDesignTheme(value: string): value is DesignTheme {
   return (
-    value === "standard" || value === "nova" || value === "greenteaspeak" || value === "pulse" || value === "ide"
+    value === "standard" || value === "nova" || value === "pulse" || value === "ide"
   );
 }
 
@@ -558,7 +556,9 @@ function loadDesignTheme(): DesignTheme {
 
 function resolveDesignThemeBase(selection: string, customThemes: CustomTheme[]): DesignTheme {
   if (selection.startsWith("custom:")) {
-    return customThemes.find((th) => `custom:${th.id}` === selection)?.baseTheme ?? "standard";
+    // A removed base (e.g. the old GreenTeaSpeak theme) falls back to Standard.
+    const base = customThemes.find((th) => `custom:${th.id}` === selection)?.baseTheme;
+    return base && isDesignTheme(base) ? base : "standard";
   }
   return isDesignTheme(selection) ? selection : "standard";
 }
@@ -567,13 +567,11 @@ function designThemeClassName(theme: DesignTheme): string {
   if (theme === "nova") return " ts-design-nova";
   if (theme === "pulse") return " ts-design-pulse";
   if (theme === "ide") return " ts-design-ide";
-  if (isGreenteaSpeakTheme(theme)) return " ts-design-greenteaspeak";
   return "";
 }
 
 function designThemeLabel(theme: DesignTheme, t: (key: string) => string): string {
   if (theme === "nova") return t("design.theme.nova");
-  if (theme === "greenteaspeak") return t("design.theme.greenteaspeak");
   if (theme === "pulse") return t("design.theme.pulse");
   if (theme === "ide") return t("design.theme.ide");
   return t("design.theme.standard");
@@ -603,7 +601,9 @@ function saveCustomThemes(list: CustomTheme[]) {
 }
 
 function loadDesignSelection(): string {
-  return localStorage.getItem(DESIGN_SELECTION_KEY) ?? loadDesignTheme();
+  const raw = localStorage.getItem(DESIGN_SELECTION_KEY);
+  // A removed builtin (e.g. "greenteaspeak") falls back to Standard.
+  return raw && (raw.startsWith("custom:") || isDesignTheme(raw)) ? raw : loadDesignTheme();
 }
 
 function loadBoolPref(key: string, fallback: boolean): boolean {
@@ -7467,11 +7467,6 @@ function DesignPanel({
   const builtins: { id: DesignTheme; name: string; desc: string }[] = [
     { id: "standard", name: t("design.theme.standard"), desc: t("design.theme.standard.desc") },
     { id: "nova", name: t("design.theme.nova"), desc: t("design.theme.nova.desc") },
-    {
-      id: GREENTEASPEAK_THEME_ID,
-      name: t("design.theme.greenteaspeak"),
-      desc: t("design.theme.greenteaspeak.desc"),
-    },
     { id: "pulse", name: t("design.theme.pulse"), desc: t("design.theme.pulse.desc") },
     { id: "ide", name: t("design.theme.ide"), desc: t("design.theme.ide.desc") },
   ];
@@ -7562,7 +7557,6 @@ function DesignPanel({
           >
             <option value="standard">{t("design.theme.standard")}</option>
             <option value="nova">{t("design.theme.nova")}</option>
-            <option value="greenteaspeak">{t("design.theme.greenteaspeak")}</option>
             <option value="pulse">{t("design.theme.pulse")}</option>
             <option value="ide">{t("design.theme.ide")}</option>
           </select>
@@ -8920,7 +8914,7 @@ function AppInner() {
     ? customThemes.find((th) => `custom:${th.id}` === designSelection) ?? null
     : null;
   // Structural base - everywhere else in the app that branches on "nova" /
-  // "greenteaspeak" behavior keeps working unchanged, whether that behavior
+  // "pulse" behavior keeps working unchanged, whether that behavior
   // came from picking the builtin directly or from a custom theme on top of it.
   const designTheme: DesignTheme = resolveDesignThemeBase(designSelection, customThemes);
   useEffect(() => setSoundStyle(designTheme === "ide" ? "ide" : "classic"), [designTheme]);
@@ -13150,14 +13144,6 @@ function AppInner() {
             </span>
           </div>
         )}
-        {isGreenteaSpeakTheme(designTheme) && (
-          <div className="gts-toolbar-brand" title="GreenTeaSpeak">
-            <span className="gts-toolbar-brand-mark">GTS</span>
-            <span className="gts-toolbar-brand-name">
-              {connected ? serverName || host || "GreenTeaSpeak" : "GreenTeaSpeak"}
-            </span>
-          </div>
-        )}
         <div className="ts-toolbar-icons">
           <div className="ts-toolbar-away" ref={awayMenuRef}>
             <button
@@ -13396,8 +13382,8 @@ function AppInner() {
 
       </div>
 
-      {sessionTabs.length > 0 || isGreenteaSpeakTheme(designTheme) ? (
-        <GreenteaSpeakChrome
+      {sessionTabs.length > 0 ? (
+        <ConnectionTabs
           tabs={sessionTabs}
           activeTabId={activeSessionId}
           onSelectTab={switchToSession}
