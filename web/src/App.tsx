@@ -9138,8 +9138,10 @@ function AppInner() {
     const entry: ClientLogEntry = { id: ++logIdRef.current, timestamp: Date.now(), category, level, message };
     setLogEntries((prev) => [...prev.slice(-(MAX_LOG_ENTRIES - 1)), entry]);
   };
-  const [optionsDialogOpen, setOptionsDialogOpen] = useState(false);
-  const [optionsSection, setOptionsSection] = useState<string>(OPTIONS_SECTIONS[0].id);
+  // client.webspeak3.de/#options/konto opens Options on that section (shareable link, e.g. for the ticker).
+  const linkedOptionsSection = OPTIONS_SECTIONS.find((s) => window.location.hash === `#options/${s.id}`)?.id;
+  const [optionsDialogOpen, setOptionsDialogOpen] = useState(!!linkedOptionsSection);
+  const [optionsSection, setOptionsSection] = useState<string>(linkedOptionsSection ?? OPTIONS_SECTIONS[0].id);
   const socketRef = useRef<WebSocket | DemoSocket | null>(null);
   /** Multi-join: one gateway WebSocket (+ connector) per session tab. */
   const [sessionTabs, setSessionTabs] = useState<SessionTabInfo[]>([]);
@@ -13724,7 +13726,10 @@ function AppInner() {
           onClearCache={handleClearCache}
           section={optionsSection}
           onSectionChange={setOptionsSection}
-          onClose={() => setOptionsDialogOpen(false)}
+          onClose={() => {
+            setOptionsDialogOpen(false);
+            if (window.location.hash.startsWith("#options/")) window.history.replaceState(null, "", window.location.pathname + window.location.search);
+          }}
           designSelection={designSelection}
           onDesignSelectionChange={handleDesignSelectionChange}
           customThemes={customThemes}
