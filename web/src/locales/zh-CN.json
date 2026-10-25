@@ -554,6 +554,7 @@
   "serverContext.addFavorite": "添加到收藏夹",
   "serverContext.disconnect": "断开连接",
   "connectError.dismiss": "关闭",
+  "connectError.gatewayFull": "网关当前已满。请几分钟后再试，或自行部署 WebSpeak3：github.com/WebSpeak3/webspeak3",
   "dialog.close": "关闭",
   "sounds.title": "声音",
   "sounds.subtitle": "配置事件提示音",

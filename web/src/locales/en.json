@@ -709,6 +709,7 @@
   "serverContext.addFavorite": "Add to favorites",
   "serverContext.disconnect": "Disconnect",
   "connectError.dismiss": "Dismiss",
+  "connectError.gatewayFull": "The gateway is full right now. Try again in a few minutes – or host WebSpeak3 yourself: github.com/WebSpeak3/webspeak3",
   "dialog.close": "Close",
   "sounds.title": "Sounds",
   "sounds.subtitle": "Configure sound notifications for events",

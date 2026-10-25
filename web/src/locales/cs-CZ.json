@@ -709,6 +709,7 @@
   "serverContext.addFavorite": "Přidat do oblíbených",
   "serverContext.disconnect": "Odpojit",
   "connectError.dismiss": "Zavřít",
+  "connectError.gatewayFull": "Brána je právě plná. Zkus to za pár minut znovu – nebo si WebSpeak3 hostuj sám: github.com/WebSpeak3/webspeak3",
   "dialog.close": "Zavřít",
   "sounds.title": "Zvuky",
   "sounds.subtitle": "Nastavit zvuková upozornění na události",

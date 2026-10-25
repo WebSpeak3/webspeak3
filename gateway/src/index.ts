@@ -93,7 +93,9 @@ const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS ?? "")
 // Each /ws socket can spawn a connector process holding a live TeamSpeak
 // session, so both need a ceiling. 0 disables the respective limit.
 const MAX_CONNECTIONS_PER_IP = Number(process.env.MAX_CONNECTIONS_PER_IP ?? 10);
-const MAX_CONNECTIONS = Number(process.env.MAX_CONNECTIONS ?? 300);
+// Measured 2026-10-25: ~8-9 % of a core per client listening to constant audio
+// (connector + node + cloudflared), ~10-15 MB RAM. 60 suits a 2-core VPS.
+const MAX_CONNECTIONS = Number(process.env.MAX_CONNECTIONS ?? 60);
 const connectionsPerIp = new Map<string, number>();
 // Every "connect" spawns a fresh connector, and a socket can send any number
 // of them - without this, 10 sockets were enough to join-flood a TS server
@@ -570,9 +572,6 @@ const wss = new WebSocketServer({
     if (ALLOWED_ORIGINS.length > 0 && origin && !ALLOWED_ORIGINS.includes(origin.toLowerCase())) {
       return done(false, 403, "Origin not allowed");
     }
-    if (MAX_CONNECTIONS > 0 && wss.clients.size >= MAX_CONNECTIONS) {
-      return done(false, 503, "Gateway is full");
-    }
     const ip = clientIp(req);
     if (MAX_CONNECTIONS_PER_IP > 0 && (connectionsPerIp.get(ip) ?? 0) >= MAX_CONNECTIONS_PER_IP) {
       return done(false, 429, "Too many connections");
@@ -678,6 +677,13 @@ wss.on("connection", (socket: WebSocket, req: IncomingMessage) => {
   // One browser WebSocket ↔ one Rust connector. Multi-join in the UI opens
   // multiple /ws connections in parallel (one per server tab).
   let connection: Ts3Connection | undefined;
+
+  // Full: accept and say so, since a browser can't read why an upgrade was refused.
+  if (MAX_CONNECTIONS > 0 && wss.clients.size > MAX_CONNECTIONS) {
+    socket.send(JSON.stringify({ type: "error", code: "gateway_full", message: "This gateway is full right now. Please try again in a few minutes." }));
+    socket.close(1013, "Gateway is full");
+    return;
+  }
 
   const ip = clientIp(req);
   connectionsPerIp.set(ip, (connectionsPerIp.get(ip) ?? 0) + 1);

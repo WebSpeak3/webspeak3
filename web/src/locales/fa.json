@@ -708,6 +708,7 @@
   "serverContext.addFavorite": "افزودن به نشانک‌ها",
   "serverContext.disconnect": "قطع اتصال",
   "connectError.dismiss": "رد کردن",
+  "connectError.gatewayFull": "گیت‌وی در حال حاضر پر است. چند دقیقه دیگر دوباره امتحان کنید – یا WebSpeak3 را خودتان میزبانی کنید: github.com/WebSpeak3/webspeak3",
   "dialog.close": "بستن",
   "sounds.title": "صداها",
   "sounds.subtitle": "پیکربندی اعلان‌های صوتی برای رویدادها",

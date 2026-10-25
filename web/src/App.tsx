@@ -10256,7 +10256,7 @@ function AppInner() {
             appendLog({ text: data.message, kind: "error" });
           } else {
             setConnecting(false);
-            setConnectError(data.message);
+            setConnectError(data.code === "gateway_full" ? t("connectError.gatewayFull") : data.message);
             updateTabMeta(sessionId, { connecting: false, connected: false });
           }
           break;
