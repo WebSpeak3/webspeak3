@@ -301,6 +301,7 @@
   "app.language.zh-CN": "简体中文",
   "app.language.fa": "فارسی (بتا)",
   "app.language.cs-CZ": "Čeština",
+  "app.language.ru": "Русский (бета)",
   "app.language.helpTranslate": "没有你的语言，或发现翻译有误？欢迎到 Weblate 参与改进 →",
   "app.serverBanner": "显示服务器横幅",
   "app.serverBanner.hint": "横幅直接从服务器管理员设置的地址加载，该主机会看到你的 IP 地址。",

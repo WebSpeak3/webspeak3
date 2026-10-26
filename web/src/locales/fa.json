@@ -407,6 +407,7 @@
   "app.language.zh-CN": "简体中文",
   "app.language.fa": "فارسی (بتا)",
   "app.language.cs-CZ": "Čeština",
+  "app.language.ru": "Русский (бета)",
   "app.language.helpTranslate": "زبان شما موجود نیست یا ترجمه‌ای اشتباه دیدید؟ در Weblate کمک کنید →",
   "app.serverBanner": "نمایش بنر سرور",
   "app.serverBanner.hint": "بنر مستقیماً از نشانی‌ای بارگیری می‌شود که مدیر سرور تعیین کرده است و آن میزبان نشانی IP شما را می‌بیند.",

@@ -5,8 +5,9 @@ import en from "./locales/en.json";
 import zhCN from "./locales/zh-CN.json";
 import fa from "./locales/fa.json";
 import csCZ from "./locales/cs-CZ.json";
+import ru from "./locales/ru.json";
 
-export type Lang = "de" | "en" | "zh-CN" | "fa" | "cs-CZ";
+export type Lang = "de" | "en" | "zh-CN" | "fa" | "cs-CZ" | "ru";
 const RTL_LANGS = new Set<Lang>(["fa"]);
 export type LangPref = "auto" | Lang;
 
@@ -24,6 +25,7 @@ const translations: Record<Lang, Record<string, string>> = {
   "zh-CN": zhCN,
   fa,
   "cs-CZ": csCZ,
+  ru,
 };
 
 function detectSystemLang(): Lang {
@@ -32,6 +34,7 @@ function detectSystemLang(): Lang {
   if (normalized.startsWith("zh")) return "zh-CN";
   if (normalized.startsWith("fa")) return "fa";
   if (normalized.startsWith("cs")) return "cs-CZ";
+  if (normalized.startsWith("ru")) return "ru";
   return normalized.startsWith("de") ? "de" : "en";
 }
 
@@ -41,7 +44,7 @@ export function resolveLang(pref: LangPref): Lang {
 
 export function loadLangPref(): LangPref {
   const raw = localStorage.getItem(LANGUAGE_KEY);
-  return raw === "de" || raw === "en" || raw === "zh-CN" || raw === "fa" || raw === "cs-CZ" || raw === "auto" ? raw : "auto";
+  return raw === "de" || raw === "en" || raw === "zh-CN" || raw === "fa" || raw === "cs-CZ" || raw === "ru" || raw === "auto" ? raw : "auto";
 }
 
 export function saveLangPref(pref: LangPref) {

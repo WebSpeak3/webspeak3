@@ -6448,6 +6448,7 @@ function AnwendungPanel({
               <option value="zh-CN">{t("app.language.zh-CN")}</option>
               <option value="fa">{t("app.language.fa")}</option>
               <option value="cs-CZ">{t("app.language.cs-CZ")}</option>
+              <option value="ru">{t("app.language.ru")}</option>
             </select>
           </label>
           <p className="ts-options-hint">

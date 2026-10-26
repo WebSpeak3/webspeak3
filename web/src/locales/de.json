@@ -407,6 +407,7 @@
   "app.language.zh-CN": "简体中文",
   "app.language.fa": "فارسی (بتا)",
   "app.language.cs-CZ": "Čeština",
+  "app.language.ru": "Русский (бета)",
   "app.language.helpTranslate": "Fehlt deine Sprache oder eine Übersetzung ist ungenau? Hilf mit auf Weblate →",
   "app.serverBanner": "Server-Banner anzeigen",
   "app.serverBanner.hint": "Das Banner lädt direkt von der Adresse, die der Serverbetreiber eingetragen hat. Dieser Host sieht dabei deine IP-Adresse.",
