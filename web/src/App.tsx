@@ -2588,17 +2588,18 @@ function SegmentedChoice<T extends string | number>({
 }
 
 function StreamSettingsDialog({
-  defaultName,
+  ownName,
   onStart,
   onCancel,
 }: {
-  defaultName: string;
+  ownName: string;
   onStart: (options: StreamPublishOptions) => void;
   onCancel: () => void;
 }) {
   const t = useT();
   const backdrop = useBackdropDismiss(onCancel);
   const [preset, setPreset] = useState<string | null>("720");
+  const [source, setSource] = useState<"display" | "camera">("display");
   const [audio, setAudio] = useState(true);
   const [accessibility, setAccessibility] = useState<number>(StreamAccess.PUBLIC);
   const [advanced, setAdvanced] = useState(false);
@@ -2645,6 +2646,18 @@ function StreamSettingsDialog({
           <h4 className="ts-stream-settings-section">{t("publish.dialog.basic")}</h4>
 
           <div className="ts-stream-settings-row">
+            <span>{t("publish.kind")}</span>
+            <SegmentedChoice
+              value={source}
+              onChange={setSource}
+              options={[
+                { value: "display", label: `🖥️ ${t("publish.kind.display")}` },
+                { value: "camera", label: `📷 ${t("publish.camera")}` },
+              ]}
+            />
+          </div>
+
+          <div className="ts-stream-settings-row">
             <span>{t("publish.preset")}</span>
             <SegmentedChoice
               value={preset ?? ""}
@@ -2659,8 +2672,16 @@ function StreamSettingsDialog({
 
           <div className="ts-stream-settings-row">
             <span>{t("publish.audio")}</span>
-            <label className="ts-stream-settings-toggle">
-              <input type="checkbox" checked={audio} onChange={(e) => setAudio(e.target.checked)} />
+            <label
+              className="ts-stream-settings-toggle"
+              title={source === "camera" ? t("publish.audio.cameraHint") : undefined}
+            >
+              <input
+                type="checkbox"
+                checked={audio && source === "display"}
+                disabled={source === "camera"}
+                onChange={(e) => setAudio(e.target.checked)}
+              />
               <span />
             </label>
           </div>
@@ -2731,7 +2752,7 @@ function StreamSettingsDialog({
                 <SegmentedChoice
                   value={audioBitrateKbps}
                   onChange={custom(setAudioBitrateKbps)}
-                  disabled={!audio}
+                  disabled={!audio || source === "camera"}
                   options={AUDIO_BITRATE_CHOICES.map((v) => ({ value: v, label: String(v) }))}
                 />
               </div>
@@ -2787,8 +2808,9 @@ function StreamSettingsDialog({
               className="ts-stream-settings-go"
               onClick={() =>
                 onStart({
-                  name: defaultName,
-                  audio,
+                  name: `${ownName} - ${t(source === "camera" ? "publish.camera" : "publish.screen")}`,
+                  source,
+                  audio: audio && source === "display",
                   accessibility,
                   mode,
                   viewerLimit,
@@ -13976,7 +13998,7 @@ function AppInner() {
 
       {streamSettingsOpen && (
         <StreamSettingsDialog
-          defaultName={`${ownClient?.name ?? "WebSpeak3"} - ${t("publish.screen")}`}
+          ownName={ownClient?.name ?? "WebSpeak3"}
           onStart={handleStartPublishing}
           onCancel={() => setStreamSettingsOpen(false)}
         />

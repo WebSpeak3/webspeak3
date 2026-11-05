@@ -46,6 +46,8 @@ export const StreamMode = {
 
 export interface StreamPublishOptions {
   name: string;
+  /** Screen/window via the browser's picker, or the webcam. */
+  source: "display" | "camera";
   /** Send the capture's audio track too, when the source has one. */
   audio: boolean;
   /** One of StreamAccess. */
@@ -112,15 +114,16 @@ export class StreamPublisher {
   }
 
   /**
-   * Captures a screen and announces the stream.
+   * Captures a screen or the webcam and announces the stream.
    *
-   * `getDisplayMedia` is secure-context-only, so this throws on a plain-http
+   * Both capture APIs are secure-context-only, so this fails on a plain-http
    * origin - the same limitation the microphone already has.
    */
   async start(options: StreamPublishOptions): Promise<void> {
     if (this.state === "live" || this.state === "starting") return;
-    if (!navigator.mediaDevices?.getDisplayMedia) {
-      this.fail("Screen sharing requires HTTPS (or localhost) - the site is not a secure context.");
+    const camera = options.source === "camera";
+    if (!(camera ? navigator.mediaDevices?.getUserMedia : navigator.mediaDevices?.getDisplayMedia)) {
+      this.fail("Streaming requires HTTPS (or localhost) - the site is not a secure context.");
       return;
     }
 
@@ -132,13 +135,15 @@ export class StreamPublisher {
     if (options.fps > 0) video.frameRate = { ideal: options.fps };
 
     try {
-      this.media = await navigator.mediaDevices.getDisplayMedia({
-        video: Object.keys(video).length > 0 ? video : true,
-        audio: options.audio,
-      });
+      const constraints = { video: Object.keys(video).length > 0 ? video : true };
+      // A camera's "audio" would be the microphone, which already goes out as
+      // voice - sending it again would only echo.
+      this.media = camera
+        ? await navigator.mediaDevices.getUserMedia({ ...constraints, audio: false })
+        : await navigator.mediaDevices.getDisplayMedia({ ...constraints, audio: options.audio });
     } catch (err) {
       this.setState("idle");
-      this.fail(`Could not capture the screen: ${describe(err)}`);
+      this.fail(`Could not capture the ${camera ? "camera" : "screen"}: ${describe(err)}`);
       return;
     }
 
@@ -423,6 +428,7 @@ export class StreamPublisher {
    * advance. A browser tab has no TS6 equivalent and reads closest to a window.
    */
   private detectSourceType(): number {
+    if (this.options?.source === "camera") return StreamSource.CAMERA;
     const surface = this.media?.getVideoTracks()[0]?.getSettings().displaySurface;
     return surface === "monitor" ? StreamSource.SCREEN : StreamSource.WINDOW;
   }
