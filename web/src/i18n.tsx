@@ -17,7 +17,7 @@ const LANGUAGE_KEY = "webspeak3:language";
 // user-facing string in the app should have an entry in every file - falls
 // back to the English string (or the raw key) if a translation is missing,
 // so a partial dictionary never blanks out the UI. Plain JSON (not inline
-// TS objects) so translation tools like Weblate can read/write these files
+// TS objects) so translation tools can read/write these files
 // directly.
 const translations: Record<Lang, Record<string, string>> = {
   de,

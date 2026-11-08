@@ -6474,7 +6474,7 @@ function AnwendungPanel({
             </select>
           </label>
           <p className="ts-options-hint">
-            <a href="https://hosted.weblate.org/projects/webspeak3/" target="_blank" rel="noreferrer">
+            <a href="https://github.com/WebSpeak3/webspeak3#translating" target="_blank" rel="noreferrer">
               {t("app.language.helpTranslate")}
             </a>
           </p>
@@ -13115,7 +13115,7 @@ function AppInner() {
               </a>
               <a
                 className="ts-menu-item"
-                href="https://hosted.weblate.org/projects/webspeak3/"
+                href="https://github.com/WebSpeak3/webspeak3#translating"
                 target="_blank"
                 rel="noreferrer"
                 onClick={() => setHelpMenuOpen(false)}

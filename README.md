@@ -365,6 +365,15 @@ A share link (above) always takes priority over the baked-in default when both a
 
 Either way: on your own hosted instance, the mandatory first-visit Terms of Use is shown and accepted before anything auto-connects; and if the connection fails, the connect dialog opens prefilled so the visitor can fix it and retry by hand.
 
+<a id="translating"></a>
+## 🌍 Translating
+
+The UI texts live in flat JSON files in [`web/src/locales/`](web/src/locales/), one per language, with `en.json` as the reference. Untranslated keys fall back to English.
+
+- **Fix or complete a language:** edit its file and open a pull request.
+- **Add a new language:** copy `en.json` to `<code>.json` (for example `it.json`), translate the values and open a pull request. Leave the keys and placeholders like `{count}` as they are. I'll wire the language into the selector.
+- **No GitHub account?** Send the file via the in-app feedback form or to feedback@webspeak3.de.
+
 ## Credits
 
 The vast majority of this project's code was written by [Claude Code](https://claude.com/claude-code) (Anthropic's Claude), working iteratively with the repo owner one feature at a time.
