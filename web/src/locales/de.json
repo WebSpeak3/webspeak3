@@ -999,5 +999,12 @@
   "sync.error.pow_required": "Sicherheitsprüfung fehlgeschlagen, bitte nochmal versuchen.",
   "sync.error.conflict": "Ein anderes Gerät hat inzwischen etwas geändert.",
   "sync.error.payload_too_large": "Zu viele Daten für die Synchronisierung (max. 1 MB).",
-  "sync.error.generic": "Synchronisierung fehlgeschlagen."
+  "sync.error.generic": "Synchronisierung fehlgeschlagen.",
+  "mobile.tab.channels": "Kanäle",
+  "mobile.tab.chat": "Chat",
+  "mobile.tab.info": "Info",
+  "mobile.mic": "Mikro",
+  "mobile.sound": "Ton",
+  "mobile.leave": "Trennen",
+  "mobile.talk": "Sprechen"
 }

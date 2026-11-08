@@ -999,5 +999,12 @@
   "sync.error.pow_required": "Security check failed, please try again.",
   "sync.error.conflict": "Another device changed something in the meantime.",
   "sync.error.payload_too_large": "Too much data to sync (max. 1 MB).",
-  "sync.error.generic": "Sync failed."
+  "sync.error.generic": "Sync failed.",
+  "mobile.tab.channels": "Channels",
+  "mobile.tab.chat": "Chat",
+  "mobile.tab.info": "Info",
+  "mobile.mic": "Mic",
+  "mobile.sound": "Sound",
+  "mobile.leave": "Leave",
+  "mobile.talk": "Talk"
 }

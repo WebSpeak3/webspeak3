@@ -998,5 +998,12 @@
   "sync.error.pow_required": "安全检查失败，请重试。",
   "sync.error.conflict": "另一台设备在此期间做了更改。",
   "sync.error.payload_too_large": "同步数据过多（最多 1 MB）。",
-  "sync.error.generic": "同步失败。"
+  "sync.error.generic": "同步失败。",
+  "mobile.tab.channels": "频道",
+  "mobile.tab.chat": "聊天",
+  "mobile.tab.info": "信息",
+  "mobile.mic": "麦克风",
+  "mobile.sound": "声音",
+  "mobile.leave": "断开",
+  "mobile.talk": "说话"
 }

@@ -999,5 +999,12 @@
   "sync.error.pow_required": "Bezpečnostní kontrola selhala, zkus to znovu.",
   "sync.error.conflict": "Jiné zařízení mezitím něco změnilo.",
   "sync.error.payload_too_large": "Příliš mnoho dat pro synchronizaci (max. 1 MB).",
-  "sync.error.generic": "Synchronizace selhala."
+  "sync.error.generic": "Synchronizace selhala.",
+  "mobile.tab.channels": "Kanály",
+  "mobile.tab.chat": "Chat",
+  "mobile.tab.info": "Info",
+  "mobile.mic": "Mikrofon",
+  "mobile.sound": "Zvuk",
+  "mobile.leave": "Odpojit",
+  "mobile.talk": "Mluvit"
 }

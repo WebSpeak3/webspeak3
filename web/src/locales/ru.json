@@ -999,5 +999,12 @@
   "sync.error.pow_required": "Проверка безопасности не пройдена, попробуйте ещё раз.",
   "sync.error.conflict": "Тем временем что-то изменилось на другом устройстве.",
   "sync.error.payload_too_large": "Слишком много данных для синхронизации (макс. 1 МБ).",
-  "sync.error.generic": "Ошибка синхронизации."
+  "sync.error.generic": "Ошибка синхронизации.",
+  "mobile.tab.channels": "Каналы",
+  "mobile.tab.chat": "Чат",
+  "mobile.tab.info": "Инфо",
+  "mobile.mic": "Микрофон",
+  "mobile.sound": "Звук",
+  "mobile.leave": "Выйти",
+  "mobile.talk": "Говорить"
 }

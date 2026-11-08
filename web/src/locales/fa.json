@@ -998,5 +998,12 @@
   "sync.error.pow_required": "بررسی امنیتی ناموفق بود، دوباره امتحان کن.",
   "sync.error.conflict": "دستگاه دیگری در این فاصله چیزی را تغییر داده است.",
   "sync.error.payload_too_large": "داده برای همگام‌سازی بیش از حد است (حداکثر ۱ مگابایت).",
-  "sync.error.generic": "همگام‌سازی ناموفق بود."
+  "sync.error.generic": "همگام‌سازی ناموفق بود.",
+  "mobile.tab.channels": "کانال‌ها",
+  "mobile.tab.chat": "گفتگو",
+  "mobile.tab.info": "اطلاعات",
+  "mobile.mic": "میکروفون",
+  "mobile.sound": "صدا",
+  "mobile.leave": "خروج",
+  "mobile.talk": "صحبت"
 }

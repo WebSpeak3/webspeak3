@@ -4999,3 +4999,409 @@ input.ts-identities-uid {
 .ts-app .gts-connection-tab-close:hover {
   opacity: 1;
 }
+
+/* ---------------------------------------------------------------------------
+   Mobile shell (.ts-mobile is set from JS below 700px or via the demo toggle).
+   Own layout instead of the squeezed desktop one: slim header with the menu
+   behind ☰, one full-height panel at a time (channels / chat / info), big
+   voice controls and tabs at the bottom. Touch targets are >= 44px.
+   --------------------------------------------------------------------------- */
+
+.ts-app.ts-mobile {
+  height: 100dvh;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --m-radius: 14px;
+}
+
+.ts-app.ts-mobile > .ts-toolbar,
+.ts-app.ts-mobile > .ts-log,
+.ts-app.ts-mobile .ts-resize-handle-vertical,
+.ts-app.ts-mobile .ts-resize-handle-horizontal {
+  display: none !important;
+}
+
+/* Header */
+
+.ts-app.ts-mobile > .ts-menubar {
+  position: relative;
+  min-height: 56px;
+  padding: 0 8px 0 4px;
+  gap: 6px;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  font-size: 15px;
+}
+
+.ts-app.ts-mobile > .ts-menubar .ts-nova-menu-dropdown {
+  position: static;
+  order: 0;
+}
+
+.ts-app.ts-mobile .ts-nova-menu-toggle {
+  width: 44px;
+  height: 44px;
+  font-size: 22px;
+  border-radius: 12px;
+  border: none;
+  background: transparent;
+}
+
+.ts-app.ts-mobile .ts-mobile-title {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+  line-height: 1.2;
+}
+
+.ts-app.ts-mobile .ts-mobile-title-name {
+  font-size: 17px;
+  font-weight: 650;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ts-app.ts-mobile .ts-mobile-title-status {
+  font-size: 12px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.ts-app.ts-mobile .ts-mobile-title-status::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--text-muted);
+}
+
+.ts-app.ts-mobile .ts-mobile-title-status-on::before {
+  background: #3ba55d;
+}
+
+/* The ☰ panel becomes a full-width sheet with inline (accordion) submenus. */
+.ts-app.ts-mobile .ts-menubar-items.ts-nova-menu-panel.ts-nova-menu-panel-open {
+  left: 8px;
+  right: 8px;
+  top: calc(100% + 4px);
+  margin: 0;
+  padding: 8px;
+  max-height: calc(100dvh - 140px);
+  overflow-y: auto;
+  border-radius: var(--m-radius);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+}
+
+.ts-app.ts-mobile .ts-menubar-items.ts-nova-menu-panel-open .ts-menubar-item,
+.ts-app.ts-mobile .ts-menubar-items.ts-nova-menu-panel-open .ts-menubar-item-active {
+  min-height: 48px;
+  padding: 0 14px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+  text-align: left;
+  border-radius: 10px;
+}
+
+.ts-app.ts-mobile .ts-menubar-items.ts-nova-menu-panel-open .ts-menu {
+  position: static;
+  margin: 0 0 6px 10px;
+  width: auto;
+  min-width: 0;
+  max-height: none;
+  border: none;
+  border-left: 2px solid var(--border-soft);
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+}
+
+.ts-app.ts-mobile .ts-menu-item {
+  min-height: 44px;
+  font-size: 15px;
+}
+
+/* Body: one panel at a time */
+
+.ts-app.ts-mobile .ts-body {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.ts-app.ts-mobile .ts-upper {
+  height: auto !important;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+}
+
+.ts-app.ts-mobile .ts-tree-panel,
+.ts-app.ts-mobile .ts-side-panel {
+  width: 100% !important;
+  max-height: none;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  border: none;
+}
+
+.ts-app.ts-mobile .ts-chat-panel {
+  flex: 1;
+  min-height: 0;
+}
+
+.ts-app.ts-mobile-tab-tree .ts-side-panel,
+.ts-app.ts-mobile-tab-tree .ts-chat-panel,
+.ts-app.ts-mobile-tab-info .ts-tree-panel,
+.ts-app.ts-mobile-tab-info .ts-chat-panel,
+.ts-app.ts-mobile-tab-chat .ts-upper {
+  display: none !important;
+}
+
+/* Tree: big, rounded rows */
+
+.ts-app.ts-mobile .ts-tree-panel {
+  padding: 6px 8px 12px;
+  font-size: 15px;
+}
+
+.ts-app.ts-mobile .ts-tree-panel .ts-row {
+  min-height: 44px;
+  line-height: 1.3;
+  padding-top: 0;
+  padding-bottom: 0;
+  padding-right: 10px;
+  gap: 8px;
+  border-radius: 10px;
+}
+
+.ts-app.ts-mobile .ts-tree-panel .ts-server-row {
+  font-weight: 650;
+}
+
+.ts-app.ts-mobile .ts-tree-search {
+  min-height: 42px;
+  margin: 6px 0;
+  padding: 0 14px;
+  font-size: 16px;
+  border-radius: 12px;
+}
+
+.ts-app.ts-mobile .ts-side-panel {
+  padding: 8px 12px;
+  font-size: 15px;
+}
+
+/* Chat */
+
+.ts-app.ts-mobile .ts-chat-messages {
+  font-size: 15px;
+  padding: 8px 12px;
+}
+
+.ts-app.ts-mobile .ts-chat-tabs {
+  overflow-x: auto;
+  gap: 6px;
+  padding: 6px 8px;
+}
+
+.ts-app.ts-mobile .ts-chat-tab {
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: 999px;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.ts-app.ts-mobile .ts-chat-input-row {
+  padding: 8px;
+  gap: 8px;
+  align-items: flex-end;
+}
+
+.ts-app.ts-mobile .ts-chat-input-row textarea {
+  min-height: 44px;
+  font-size: 16px; /* < 16px makes iOS zoom into the field */
+  padding: 10px 14px;
+  border-radius: 22px;
+}
+
+.ts-app.ts-mobile .ts-chat-input-row button {
+  min-height: 44px;
+  padding: 0 18px;
+  font-size: 15px;
+  font-weight: 600;
+  border: none;
+  border-radius: 22px;
+  background: var(--accent);
+  color: #fff;
+}
+
+/* Bottom: voice bar + tabs */
+
+.ts-mobile-bottom {
+  flex-shrink: 0;
+  background: var(--bg-toolbar-1);
+  border-top: 1px solid var(--border-soft);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.ts-mobile-voicebar {
+  display: flex;
+  gap: 8px;
+  padding: 8px 10px 4px;
+}
+
+.ts-mobile-voice-btn {
+  flex: 1;
+  min-width: 0;
+  min-height: 56px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border: none;
+  border-radius: var(--m-radius, 14px);
+  background: var(--input-bg);
+  color: var(--text);
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.ts-mobile-voice-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ts-mobile-voice-on {
+  background: #3ba55d;
+  color: #fff;
+}
+
+.ts-mobile-voice-off {
+  background: #b3403a;
+  color: #fff;
+}
+
+.ts-mobile-voice-on .ts-mobile-voice-label,
+.ts-mobile-voice-off .ts-mobile-voice-label,
+.ts-mobile-voice-hangup .ts-mobile-voice-label {
+  color: #fff;
+}
+
+.ts-mobile-voice-hangup {
+  flex: 0 0 72px;
+  background: #d6403d;
+  color: #fff;
+}
+
+.ts-mobile-ptt {
+  flex: 2;
+}
+
+.ts-mobile-connect-btn {
+  flex: 1;
+  min-height: 52px;
+  border: none;
+  border-radius: var(--m-radius, 14px);
+  background: var(--accent);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 650;
+}
+
+.ts-mobile-tabs {
+  display: flex;
+}
+
+.ts-mobile-tab {
+  flex: 1;
+  min-height: 52px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  position: relative;
+  touch-action: manipulation;
+}
+
+.ts-mobile-icon {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.ts-mobile-tab-active {
+  color: var(--accent);
+}
+
+.ts-mobile-tab-active::before {
+  content: "";
+  position: absolute;
+  top: 6px;
+  width: 56px;
+  height: 30px;
+  border-radius: 15px;
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.ts-mobile-tab-unread::after {
+  content: "";
+  position: absolute;
+  top: 8px;
+  left: calc(50% + 10px);
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #d6403d;
+}
+
+/* Floating buttons sit above the bottom bars instead of on top of them. */
+.ts-app.ts-mobile .ts-donate-fab {
+  bottom: calc(150px + env(safe-area-inset-bottom));
+  right: 12px;
+}
+
+.ts-app.ts-mobile .ts-feedback-fab-wrap {
+  bottom: calc(150px + env(safe-area-inset-bottom));
+  right: 12px;
+}
+
+.ts-app.ts-mobile .ts-feedback-fab-wrap-stacked {
+  bottom: calc(200px + env(safe-area-inset-bottom));
+}
+
+.ts-mobile-tab > * {
+  position: relative;
+}
+
+/* In the chat tab the floating buttons would cover the send button. */
+.ts-app.ts-mobile-tab-chat .ts-donate-fab,
+.ts-app.ts-mobile-tab-chat .ts-feedback-fab-wrap {
+  display: none;
+}
+
+.ts-app.ts-mobile .ts-chat-tabs {
+  order: -1;
+  border-bottom: 1px solid var(--border-soft);
+}

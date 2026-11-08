@@ -3150,6 +3150,27 @@ function NewsTicker() {
   );
 }
 
+/** Line icons for the mobile shell (24px grid, stroke = currentColor). */
+const MOBILE_ICONS = {
+  mic: "M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3zM5 11a7 7 0 0 0 14 0M12 18v3",
+  micOff: "M3 3l18 18M9 9v3a3 3 0 0 0 5.1 2.1M15 9.3V6a3 3 0 0 0-5.7-1.3M5 11a7 7 0 0 0 11.9 4.9M19 11a7 7 0 0 1-.6 2.8M12 18v3",
+  sound: "M11 5L6 9H3v6h3l5 4zM15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13",
+  soundOff: "M11 5L6 9H3v6h3l5 4zM22 9l-6 6M16 9l6 6",
+  leave: "M3.6 13.4c4.6-4.5 12.2-4.5 16.8 0l-2.3 2.3-3-1.3v-2.1a11 11 0 0 0-6.2 0v2.1l-3 1.3z",
+  talk: "M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3zM5 11a7 7 0 0 0 14 0M12 18v3M2 8v4M22 8v4",
+  tree: "M4 5h16M8 10h12M8 15h12M4 5v15M4 10h4M4 15h4M8 20h12M4 20h4",
+  chat: "M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z",
+  info: "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 11v6M12 7.5v.5",
+} as const;
+
+function MobileIcon({ name }: { name: keyof typeof MOBILE_ICONS }) {
+  return (
+    <svg className="ts-mobile-icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <path d={MOBILE_ICONS[name]} />
+    </svg>
+  );
+}
+
 function DonateFab() {
   const t = useT();
   if (!DONATE_URL) return null;
@@ -8906,6 +8927,17 @@ function AppInner() {
   const [banSeconds, setBanSeconds] = useState("0");
   const banBackdrop = useBackdropDismiss(() => setBanTarget(null));
   const [demoForceMobile, setDemoForceMobile] = useState(false);
+  // Phones get their own shell (header + big tree + bottom voice bar/tabs)
+  // instead of the squeezed desktop layout.
+  const [narrowScreen, setNarrowScreen] = useState(() => window.matchMedia("(max-width: 700px)").matches);
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 700px)");
+    const onChange = () => setNarrowScreen(mq.matches);
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
+  const mobile = narrowScreen || demoForceMobile;
+  const [mobileTab, setMobileTab] = useState<"tree" | "chat" | "info">("tree");
   const [clientContextMenu, setClientContextMenu] = useState<{
     x: number;
     y: number;
@@ -12568,7 +12600,7 @@ function AppInner() {
       : treeClients.length;
   const novaSplash = designTheme === "nova" && !connected;
   // Nova and IDE collapse the menubar behind a hamburger button.
-  const compactMenu = designTheme === "nova" || designTheme === "ide";
+  const compactMenu = designTheme === "nova" || designTheme === "ide" || mobile;
   const micLabel = !micOn ? t("toolbar.micEnable") : inputMuted ? t("toolbar.micUnmute") : t("toolbar.micMute");
   const streamLabel = DEMO_MODE
     ? t("publish.demoUnavailable")
@@ -12579,7 +12611,7 @@ function AppInner() {
     <div
       className={`ts-app ts-theme-${theme}${designThemeClassName(designTheme)}${
         activeCustomTheme ? " ts-design-custom" : ""
-      }${demoForceMobile ? " ts-force-mobile" : ""}${novaSplash ? " ts-nova-splash" : ""}${
+      }${demoForceMobile ? " ts-force-mobile" : ""}${mobile ? ` ts-mobile ts-mobile-tab-${mobileTab}` : ""}${novaSplash ? " ts-nova-splash" : ""}${
         designTheme === "ide" && !idePixelFont ? " ts-ide-plain-font" : ""
       }`}
       data-custom-theme={activeCustomTheme?.id}
@@ -13141,6 +13173,14 @@ function AppInner() {
         </div>
         </div>
         </div>
+        {mobile && designTheme !== "nova" && (
+          <div className="ts-mobile-title">
+            <span className="ts-mobile-title-name">{connected ? serverName || host : "WebSpeak3"}</span>
+            <span className={`ts-mobile-title-status${connected ? " ts-mobile-title-status-on" : ""}`}>
+              {connected ? ownClient?.name ?? t("design.status.connected") : t("tree.notConnected")}
+            </span>
+          </div>
+        )}
         {designTheme === "nova" && (
           <div className="ts-nova-topbar-server">
             <span className="ts-nova-topbar-logo">W</span>
@@ -13405,7 +13445,7 @@ function AppInner() {
 
       </div>
 
-      {sessionTabs.length > 0 ? (
+      {sessionTabs.length > (mobile ? 1 : 0) ? (
         <ConnectionTabs
           tabs={sessionTabs}
           activeTabId={activeSessionId}
@@ -14656,6 +14696,83 @@ function AppInner() {
           </div>
         </div>
       </main>
+
+      {mobile && (
+        <div className="ts-mobile-bottom">
+          {connected ? (
+            <div className="ts-mobile-voicebar">
+              {pushToTalk && micOn && (
+                <button
+                  className={`ts-mobile-voice-btn ts-mobile-ptt${pttPressed ? " ts-mobile-voice-on" : ""}`}
+                  onPointerDown={(e) => {
+                    e.currentTarget.setPointerCapture(e.pointerId);
+                    setPttPressed(true);
+                  }}
+                  onPointerUp={() => setPttPressed(false)}
+                  onPointerCancel={() => setPttPressed(false)}
+                  onContextMenu={(e) => e.preventDefault()}
+                  aria-label={t("toolbar.pushToTalk")}
+                  aria-pressed={pttPressed}
+                >
+                  <MobileIcon name="talk" />
+                  <span className="ts-mobile-voice-label">{t("mobile.talk")}</span>
+                </button>
+              )}
+              <button
+                className={`ts-mobile-voice-btn${micOn && !inputMuted ? " ts-mobile-voice-on" : ""}${
+                  micOn && inputMuted ? " ts-mobile-voice-off" : ""
+                }`}
+                onClick={handleToggleMic}
+                aria-label={micLabel}
+              >
+                <MobileIcon name={micOn && !inputMuted ? "mic" : "micOff"} />
+                <span className="ts-mobile-voice-label">{t("mobile.mic")}</span>
+              </button>
+              <button
+                className={`ts-mobile-voice-btn${outputMuted ? " ts-mobile-voice-off" : ""}`}
+                onClick={handleToggleOutputMuted}
+                aria-label={outputMuted ? t("toolbar.unmuteSound") : t("toolbar.muteSound")}
+              >
+                <MobileIcon name={outputMuted ? "soundOff" : "sound"} />
+                <span className="ts-mobile-voice-label">{t("mobile.sound")}</span>
+              </button>
+              <button className="ts-mobile-voice-btn ts-mobile-voice-hangup" onClick={handleDisconnect} aria-label={t("menu.connections.disconnectCurrent")}>
+                <MobileIcon name="leave" />
+                <span className="ts-mobile-voice-label">{t("mobile.leave")}</span>
+              </button>
+            </div>
+          ) : (
+            <div className="ts-mobile-voicebar">
+              <button className="ts-mobile-connect-btn" onClick={() => setConnectDialogOpen(true)} disabled={connecting}>
+                {t("menu.connections.connect")}
+              </button>
+            </div>
+          )}
+          <nav className="ts-mobile-tabs">
+            {(
+              [
+                ["tree", t("mobile.tab.channels")],
+                ["chat", t("mobile.tab.chat")],
+                ["info", t("mobile.tab.info")],
+              ] as const
+            ).map(([id, label]) => (
+              <button
+                key={id}
+                className={`ts-mobile-tab${mobileTab === id ? " ts-mobile-tab-active" : ""}${
+                  id === "chat" && (chatUnread.server || chatUnread.channel || Object.values(pmThreads).some((p) => p.unread))
+                    ? " ts-mobile-tab-unread"
+                    : ""
+                }`}
+                onClick={() => setMobileTab(id)}
+                aria-current={mobileTab === id ? "page" : undefined}
+              >
+                <MobileIcon name={id} />
+                {label}
+              </button>
+            ))}
+          </nav>
+        </div>
+      )}
 
       <div className="ts-log">
         {log.slice(-50).map((entry, i) => {
