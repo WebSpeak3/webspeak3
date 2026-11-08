@@ -31,6 +31,23 @@
 
 ---
 
+## 📑 Contents
+
+- [Preview](#-preview)
+- [Quick Start](#-quick-start)
+- [Features](#-features)
+- [Tech Stack](#-tech-stack)
+- [Browser Support](#-browser-support)
+- [Installation](#-installation)
+  - [Docker (recommended)](#-docker-recommended)
+  - [Account sync](#account-sync)
+  - [Environment variables](#environment-variables)
+- [Auto-Connect Links](#-auto-connect-links)
+- [Translating](#translating)
+- [Credits](#credits)
+- [In Memory of Akimo](#-in-memory-of-akimo)
+- [Legal / Disclaimer](#legal--disclaimer)
+
 ## 📸 Preview
 
 <table>
