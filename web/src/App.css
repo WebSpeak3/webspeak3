@@ -5580,3 +5580,87 @@ input.ts-identities-uid {
 .ts-app.ts-mobile .ts-options-dialog .ts-options-content label {
   min-height: 36px;
 }
+
+/* --- Mobile: ☰ menu as drill-down (tap "Extras" -> only its items) ------- */
+
+.ts-app.ts-mobile .ts-menubar-items.ts-nova-menu-panel.ts-nova-menu-panel-open {
+  z-index: 600;
+}
+
+.ts-app.ts-mobile:has(.ts-nova-menu-panel-open) .ts-donate-fab,
+.ts-app.ts-mobile:has(.ts-nova-menu-panel-open) .ts-feedback-fab-wrap {
+  display: none;
+}
+
+.ts-app.ts-mobile .ts-nova-menu-panel-open .ts-menubar-dropdown > .ts-menubar-item {
+  display: flex;
+  align-items: center;
+}
+
+.ts-app.ts-mobile .ts-nova-menu-panel-open .ts-menubar-dropdown > .ts-menubar-item::after {
+  content: "›";
+  margin-left: auto;
+  font-size: 22px;
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
+/* One submenu open: hide its siblings, its trigger becomes the back row. */
+.ts-app.ts-mobile .ts-nova-menu-panel-open:has(> .ts-menubar-dropdown > .ts-menu) > .ts-menubar-dropdown:not(:has(> .ts-menu)) {
+  display: none;
+}
+
+.ts-app.ts-mobile .ts-nova-menu-panel-open .ts-menubar-dropdown:has(> .ts-menu) > .ts-menubar-item {
+  font-size: 17px;
+  border-bottom: 1px solid var(--border-soft);
+  border-radius: 10px 10px 0 0;
+  margin-bottom: 6px;
+}
+
+.ts-app.ts-mobile .ts-nova-menu-panel-open .ts-menubar-dropdown:has(> .ts-menu) > .ts-menubar-item::before {
+  content: "‹";
+  font-size: 30px;
+  line-height: 1;
+  margin-right: 10px;
+  color: var(--accent);
+}
+
+.ts-app.ts-mobile .ts-nova-menu-panel-open .ts-menubar-dropdown:has(> .ts-menu) > .ts-menubar-item::after {
+  content: none;
+}
+
+.ts-app.ts-mobile .ts-menubar-items.ts-nova-menu-panel-open .ts-menu {
+  margin: 0;
+  padding: 0;
+  border-left: none;
+}
+
+.ts-app.ts-mobile .ts-nova-menu-panel-open .ts-menu-item {
+  min-height: 50px;
+  padding: 0 10px;
+  gap: 14px;
+  border-radius: 12px;
+}
+
+.ts-app.ts-mobile .ts-nova-menu-panel-open .ts-menu-item-icon {
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: var(--input-bg);
+  font-size: 17px;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+/* Keyboard shortcuts mean nothing on a phone. */
+.ts-app.ts-mobile .ts-nova-menu-panel-open .ts-menu-item-shortcut {
+  display: none;
+}
+
+.ts-app.ts-mobile .ts-nova-menu-panel-open .ts-menu-separator {
+  margin: 6px 10px;
+  opacity: 0.6;
+}
