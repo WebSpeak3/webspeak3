@@ -934,7 +934,7 @@
   "securitySettings.masterNew": "新主密码",
   "securitySettings.masterRepeat": "重复",
   "securitySettings.masterMismatch": "两次密码不一致。",
-  "securitySettings.masterNote": "请牢记:没有它,身份和已保存的密码将丢失。",
+  "securitySettings.masterNote": "每次新会话(重新加载或新标签页)都需要重新输入。请牢记:没有它,身份和已保存的密码将丢失。",
   "sync.subtitle": "在所有设备上使用你的数据",
   "sync.intro": "账户只是一个随机号码，可选附加密码。无需邮箱，无需姓名。所有数据在上传前都会在你的设备上加密，服务器只能看到无法读取的数据。",
   "sync.create.title": "新账户",

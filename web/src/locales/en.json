@@ -935,7 +935,7 @@
   "securitySettings.masterNew": "New master password",
   "securitySettings.masterRepeat": "Repeat",
   "securitySettings.masterMismatch": "The passwords don't match.",
-  "securitySettings.masterNote": "Remember it well: without it, identities and saved passwords are lost.",
+  "securitySettings.masterNote": "You'll have to enter it again in every new session (reload or new tab). Remember it well: without it, identities and saved passwords are lost.",
   "sync.subtitle": "Your data on all your devices",
   "sync.intro": "An account is just a random number, optionally with a password. No email, no name. Everything is encrypted on your device before it is uploaded. The server only sees unreadable data.",
   "sync.create.title": "New account",

@@ -935,7 +935,7 @@
   "securitySettings.masterNew": "Nové hlavní heslo",
   "securitySettings.masterRepeat": "Zopakovat",
   "securitySettings.masterMismatch": "Hesla se neshodují.",
-  "securitySettings.masterNote": "Dobře si ho zapamatujte: bez něj přijdete o identity a uložená hesla.",
+  "securitySettings.masterNote": "Budete ho muset zadat znovu v každé nové relaci (po obnovení stránky nebo v nové kartě). Dobře si ho zapamatujte: bez něj přijdete o identity a uložená hesla.",
   "sync.subtitle": "Tvá data na všech zařízeních",
   "sync.intro": "Účet je jen náhodné číslo, volitelně s heslem. Žádný e-mail, žádné jméno. Vše se před nahráním zašifruje na tvém zařízení. Server vidí jen nečitelná data.",
   "sync.create.title": "Nový účet",

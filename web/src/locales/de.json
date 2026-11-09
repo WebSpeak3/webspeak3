@@ -935,7 +935,7 @@
   "securitySettings.masterNew": "Neues Master Passwort",
   "securitySettings.masterRepeat": "Wiederholen",
   "securitySettings.masterMismatch": "Die Passwörter stimmen nicht überein.",
-  "securitySettings.masterNote": "Merk es dir gut: Ohne das Passwort sind Identitäten und gespeicherte Passwörter weg.",
+  "securitySettings.masterNote": "Du musst es bei jeder neuen Sitzung (Neuladen oder neuer Tab) wieder eingeben. Merk es dir gut: Ohne das Passwort sind Identitäten und gespeicherte Passwörter weg.",
   "sync.subtitle": "Deine Daten auf allen Geräten",
   "sync.intro": "Ein Konto besteht nur aus einer zufälligen Nummer, optional mit Passwort. Keine Mail, kein Name. Alles wird auf deinem Gerät verschlüsselt, bevor es hochgeladen wird. Der Server sieht nur unlesbare Daten.",
   "sync.create.title": "Neues Konto",
