@@ -5346,6 +5346,8 @@ input.ts-identities-uid {
   font-weight: 600;
   position: relative;
   touch-action: manipulation;
+  margin: 4px 18px;
+  border-radius: 16px;
 }
 
 .ts-mobile-icon {
@@ -5358,13 +5360,7 @@ input.ts-identities-uid {
   color: var(--accent);
 }
 
-.ts-mobile-tab-active::before {
-  content: "";
-  position: absolute;
-  top: 6px;
-  width: 56px;
-  height: 30px;
-  border-radius: 15px;
+.ts-mobile-tab-active {
   background: color-mix(in srgb, var(--accent) 18%, transparent);
 }
 
