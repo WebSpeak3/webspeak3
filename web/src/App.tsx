@@ -12655,6 +12655,11 @@ function AppInner() {
           className={`ts-menubar-items${compactMenu ? " ts-nova-menu-panel" : ""}${
             novaMenuOpen ? " ts-nova-menu-panel-open" : ""
           }`}
+          // Picking an entry closes the whole ☰ panel, not just the submenu -
+          // otherwise it stays on top of the dialog the entry just opened.
+          onClick={(e) => {
+            if (compactMenu && (e.target as HTMLElement).closest(".ts-menu-item")) setNovaMenuOpen(false);
+          }}
         >
         <div className="ts-menubar-dropdown" ref={connectionsMenuRef}>
           <button
