@@ -5664,3 +5664,26 @@ input.ts-identities-uid {
   margin: 6px 10px;
   opacity: 0.6;
 }
+
+/* An open submenu takes the whole screen, its back row acts as the title bar. */
+.ts-app.ts-mobile .ts-menubar-items.ts-nova-menu-panel.ts-nova-menu-panel-open:has(> .ts-menubar-dropdown > .ts-menu) {
+  position: fixed;
+  inset: 0;
+  max-height: none;
+  margin: 0;
+  padding: 0 8px calc(16px + env(safe-area-inset-bottom));
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.ts-app.ts-mobile .ts-nova-menu-panel-open .ts-menubar-dropdown:has(> .ts-menu) > .ts-menubar-item {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  min-height: 56px;
+  margin: 0 -8px 6px;
+  padding: env(safe-area-inset-top) 16px 0 12px;
+  border-radius: 0;
+  background: var(--bg-toolbar-1);
+}
