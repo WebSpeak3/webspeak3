@@ -5852,3 +5852,41 @@ input.ts-identities-uid {
 @keyframes ts-mobile-drawer-in {
   from { transform: translateX(-100%); }
 }
+
+/* --- Mobile × design themes: themes keep colours/fonts, the mobile layout wins */
+/* Nova/Pulse reorder the app's flex children; pin the mobile bar + ticker last. */
+.ts-app.ts-mobile > .ts-mobile-bottom {
+  order: 10;
+}
+.ts-app.ts-mobile > .ts-news-ticker {
+  order: 11;
+}
+
+/* Nova/Pulse send buttons are icon-only; keep them round instead of the text pill. */
+.ts-app.ts-mobile:is(.ts-design-nova, .ts-design-pulse) .ts-chat-input-row button {
+  width: 44px;
+  min-width: 44px;
+  padding: 0;
+  font-size: 0;
+  border-radius: 50%;
+}
+
+/* IDE: undo its floating hamburger and three-column grid. */
+.ts-app.ts-mobile.ts-design-ide > .ts-menubar {
+  height: auto;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--border-soft);
+}
+.ts-app.ts-mobile.ts-design-ide > .ts-menubar .ts-nova-menu-dropdown {
+  position: static;
+  order: 0;
+}
+.ts-app.ts-mobile.ts-design-ide > .ts-body {
+  display: flex;
+}
+.ts-app.ts-mobile.ts-design-ide .ts-upper {
+  display: flex;
+}
+.ts-app.ts-mobile.ts-design-ide .ts-tree-panel {
+  max-height: none;
+}
