@@ -43,6 +43,9 @@
 .ts-app.ts-force-mobile {
   max-width: 390px;
   margin: 0 auto;
+  /* Makes position:fixed children (FABs, dialogs) stick to this phone frame
+     instead of the browser window. */
+  transform: translateZ(0);
   box-shadow:
     0 0 0 1px rgba(0, 0, 0, 0.4),
     0 0 40px rgba(0, 0, 0, 0.5);
