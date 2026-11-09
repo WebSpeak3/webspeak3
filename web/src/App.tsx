@@ -12623,9 +12623,9 @@ function AppInner() {
           <a href="https://github.com/WebSpeak3/webspeak3" target="_blank" rel="noreferrer">
             Get WebSpeak3
           </a>
-          <button className="ts-demo-mobile-toggle" onClick={() => setDemoForceMobile((v) => !v)}>
+          {!narrowScreen && <button className="ts-demo-mobile-toggle" onClick={() => setDemoForceMobile((v) => !v)}>
             {demoForceMobile ? "🖥 Desktop view" : "📱 Mobile view"}
-          </button>
+          </button>}
         </div>
       )}
       <div className="ts-menubar">
