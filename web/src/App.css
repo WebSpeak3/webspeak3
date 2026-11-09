@@ -5826,3 +5826,29 @@ input.ts-identities-uid {
   gap: 6px;
   margin: 0;
 }
+
+/* --- Mobile: ☰ top level as a left drawer, as wide as its longest entry ---- */
+.ts-app.ts-mobile .ts-menubar-items.ts-nova-menu-panel.ts-nova-menu-panel-open:not(:has(> .ts-menubar-dropdown > .ts-menu)) {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: auto;
+  width: max-content;
+  max-width: 85%;
+  max-height: none;
+  margin: 0;
+  padding: calc(12px + env(safe-area-inset-top)) 8px calc(12px + env(safe-area-inset-bottom));
+  border: none;
+  border-radius: 0 20px 20px 0;
+  box-shadow: 0 0 0 100vmax rgba(0, 0, 0, 0.45), 8px 0 24px rgba(0, 0, 0, 0.3);
+  animation: ts-mobile-drawer-in 0.2s ease-out;
+}
+
+.ts-app.ts-mobile .ts-nova-menu-panel-open:not(:has(> .ts-menubar-dropdown > .ts-menu)) .ts-menubar-dropdown > .ts-menubar-item {
+  gap: 28px;
+}
+
+@keyframes ts-mobile-drawer-in {
+  from { transform: translateX(-100%); }
+}
