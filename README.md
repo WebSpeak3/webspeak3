@@ -57,7 +57,7 @@
   </tr>
   <tr>
     <td width="72%"><img src="docs/screenshots/webspeak_current.png" width="100%" alt="WebSpeak3 desktop client connected to a TeamSpeak server"></td>
-    <td width="28%" align="center"><img src="docs/screenshots/webspeak_mobile.png" width="260" alt="WebSpeak3 mobile client connected to a TeamSpeak server"></td>
+    <td width="28%" align="center"><img src="docs/screenshots/webspeak_mobile_phone.png" width="260" alt="WebSpeak3 mobile client connected to a TeamSpeak server"></td>
   </tr>
 </table>
 
