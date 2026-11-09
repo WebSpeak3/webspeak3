@@ -8462,11 +8462,19 @@ function OptionsDialog({
   const t = useT();
   const active = OPTIONS_SECTIONS.find((s) => s.id === section) ?? OPTIONS_SECTIONS[0];
   const backdrop = useBackdropDismiss(onClose);
+  // Mobile only (CSS): list of sections first, tapping one shows just that page.
+  const [mobileDetail, setMobileDetail] = useState(false);
   return (
     <div className="ts-dialog-backdrop" {...backdrop}>
-      <div className="ts-dialog ts-options-dialog" onClick={(e) => e.stopPropagation()}>
+      <div
+        className={`ts-dialog ts-options-dialog ts-options-dialog-nav${mobileDetail ? " ts-options-detail" : ""}`}
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="ts-dialog-titlebar">
-          <span>{t("options.title")}</span>
+          <button className="ts-options-back" onClick={() => setMobileDetail(false)}>
+            <span aria-hidden="true">‹</span> {t(`options.section.${active.id}`)}
+          </button>
+          <span className="ts-options-title">{t("options.title")}</span>
           <button onClick={onClose} title={t("dialog.close")} aria-label={t("dialog.close")}>
             ✕
           </button>
@@ -8477,7 +8485,10 @@ function OptionsDialog({
               <button
                 key={s.id}
                 className={`ts-options-sidebar-item${s.id === active.id ? " ts-options-sidebar-item-active" : ""}`}
-                onClick={() => onSectionChange(s.id)}
+                onClick={() => {
+                  onSectionChange(s.id);
+                  setMobileDetail(true);
+                }}
               >
                 <span className="ts-options-sidebar-icon">{s.icon}</span>
                 <span>{t(`options.section.${s.id}`)}</span>

@@ -5415,3 +5415,168 @@ input.ts-identities-uid {
   font-size: 16px;
   color: var(--text-muted);
 }
+
+/* --- Mobile: settings dialogs as full-screen pages ------------------------ */
+
+.ts-options-back {
+  display: none;
+}
+
+.ts-app.ts-mobile .ts-options-dialog {
+  position: fixed;
+  inset: 0;
+  width: 100% !important;
+  max-height: none;
+  height: 100dvh;
+  border: none;
+  border-radius: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.ts-app.ts-mobile .ts-options-dialog .ts-dialog-titlebar {
+  min-height: 56px;
+  padding: 0 4px 0 16px;
+  font-size: 17px;
+  flex-shrink: 0;
+}
+
+.ts-app.ts-mobile .ts-options-dialog .ts-dialog-titlebar > button:last-child {
+  width: 44px;
+  height: 44px;
+  font-size: 20px;
+}
+
+.ts-app.ts-mobile .ts-options-dialog .ts-options-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  flex-direction: column;
+}
+
+.ts-app.ts-mobile .ts-options-dialog .ts-dialog-buttons {
+  display: none;
+}
+
+/* Section list */
+.ts-app.ts-mobile .ts-options-dialog-nav .ts-options-sidebar {
+  flex-direction: column;
+  flex-wrap: nowrap;
+  width: 100%;
+  padding: 8px 12px calc(16px + env(safe-area-inset-bottom));
+  border: none;
+  gap: 2px;
+}
+
+.ts-app.ts-mobile .ts-options-dialog-nav .ts-options-sidebar-item {
+  min-height: 52px;
+  padding: 0 12px;
+  gap: 14px;
+  font-size: 16px;
+  border-radius: 12px;
+  background: none;
+  border: none;
+  box-shadow: none;
+  font-weight: 500;
+}
+
+.ts-app.ts-mobile .ts-options-dialog-nav .ts-options-sidebar-item::after {
+  content: "›";
+  margin-left: auto;
+  font-size: 22px;
+  color: var(--text-muted);
+}
+
+.ts-app.ts-mobile .ts-options-dialog-nav .ts-options-sidebar-icon {
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: var(--input-bg);
+  font-size: 18px;
+}
+
+.ts-app.ts-mobile .ts-options-dialog-nav:not(.ts-options-detail) .ts-options-content,
+.ts-app.ts-mobile .ts-options-dialog-nav.ts-options-detail .ts-options-sidebar,
+.ts-app.ts-mobile .ts-options-dialog-nav.ts-options-detail .ts-options-title {
+  display: none;
+}
+
+.ts-app.ts-mobile .ts-options-detail .ts-options-back {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 8px 0 0;
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.ts-app.ts-mobile .ts-options-back span {
+  font-size: 30px;
+  line-height: 1;
+  color: var(--accent);
+}
+
+/* Other dialogs sharing this layout (server edit): tabs as a scrolling pill row */
+.ts-app.ts-mobile .ts-options-dialog:not(.ts-options-dialog-nav) .ts-options-sidebar {
+  flex-direction: row;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  width: 100%;
+  gap: 6px;
+  padding: 8px 12px;
+  flex-shrink: 0;
+}
+
+.ts-app.ts-mobile .ts-options-dialog:not(.ts-options-dialog-nav) .ts-options-sidebar-item {
+  min-height: 38px;
+  padding: 0 14px;
+  border-radius: 999px;
+  white-space: nowrap;
+  font-size: 14px;
+}
+
+.ts-app.ts-mobile .ts-options-dialog:not(.ts-options-dialog-nav) .ts-dialog-buttons {
+  display: flex;
+}
+
+/* Page content: touch-sized controls */
+.ts-app.ts-mobile .ts-options-dialog .ts-options-content {
+  padding: 16px 16px calc(24px + env(safe-area-inset-bottom));
+  font-size: 15px;
+}
+
+.ts-app.ts-mobile .ts-options-dialog .ts-options-content select,
+.ts-app.ts-mobile .ts-options-dialog .ts-options-content input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+.ts-app.ts-mobile .ts-options-dialog .ts-options-content textarea {
+  min-height: 44px;
+  font-size: 16px;
+  border-radius: 10px;
+  padding: 0 12px;
+}
+
+.ts-app.ts-mobile .ts-options-dialog .ts-options-content button {
+  min-height: 44px;
+  border-radius: 10px;
+  padding: 0 14px;
+}
+
+.ts-app.ts-mobile .ts-options-dialog .ts-options-content input[type="checkbox"],
+.ts-app.ts-mobile .ts-options-dialog .ts-options-content input[type="radio"] {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.ts-app.ts-mobile .ts-options-dialog .ts-options-content fieldset {
+  border-radius: 12px;
+}
+
+.ts-app.ts-mobile .ts-options-dialog .ts-options-content label {
+  min-height: 36px;
+}
