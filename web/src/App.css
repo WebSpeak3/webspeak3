@@ -5517,9 +5517,7 @@ input.ts-identities-uid {
 }
 
 .ts-app.ts-mobile .ts-options-back span {
-  font-size: 30px;
-  line-height: 1;
-  color: var(--accent);
+  font-size: 0;
 }
 
 /* Other dialogs sharing this layout (server edit): tabs as a scrolling pill row */
@@ -5618,11 +5616,21 @@ input.ts-identities-uid {
 }
 
 .ts-app.ts-mobile .ts-nova-menu-panel-open .ts-menubar-dropdown:has(> .ts-menu) > .ts-menubar-item::before {
-  content: "‹";
-  font-size: 30px;
-  line-height: 1;
-  margin-right: 10px;
-  color: var(--accent);
+  content: "";
+  margin-right: 12px;
+}
+
+/* Back chevron drawn with borders: a glyph sits on the baseline and looks low. */
+.ts-app.ts-mobile .ts-options-back span,
+.ts-app.ts-mobile .ts-nova-menu-panel-open .ts-menubar-dropdown:has(> .ts-menu) > .ts-menubar-item::before {
+  display: inline-block;
+  flex: none;
+  width: 10px;
+  height: 10px;
+  margin-left: 6px;
+  border-left: 2.5px solid var(--accent);
+  border-bottom: 2.5px solid var(--accent);
+  transform: rotate(45deg);
 }
 
 .ts-app.ts-mobile .ts-nova-menu-panel-open .ts-menubar-dropdown:has(> .ts-menu) > .ts-menubar-item::after {
