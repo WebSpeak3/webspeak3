@@ -5687,3 +5687,134 @@ input.ts-identities-uid {
   border-radius: 0;
   background: var(--bg-toolbar-1);
 }
+
+/* --- Mobile: all other dialogs ------------------------------------------- */
+/* Small prompts slide up as a bottom sheet; list/admin dialogs fill the
+   screen. :where() keeps this below the options-dialog rules above. */
+
+.ts-app.ts-mobile .ts-dialog-backdrop {
+  align-items: flex-end;
+}
+
+.ts-app.ts-mobile :where(.ts-dialog) {
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  max-height: 100dvh;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: none;
+  border-radius: 20px 20px 0 0;
+  padding-bottom: env(safe-area-inset-bottom);
+  font-size: 15px;
+}
+
+.ts-app.ts-mobile :where(
+  .ts-client-log-dialog, .ts-server-protocol-log-dialog, .ts-ban-list-dialog,
+  .ts-complain-list-dialog, .ts-offline-messages-dialog, .ts-collected-urls-dialog,
+  .ts-contacts-dialog, .ts-identities-dialog, .ts-favorites-dialog,
+  .ts-file-browser-dialog, .ts-transfers-window, .ts-perms-editor-dialog,
+  .ts-permission-overview-dialog, .ts-whisper-lists-dialog,
+  .ts-whisper-history-dialog, .ts-server-icons-dialog, .ts-group-assign-dialog,
+  .ts-tos-dialog, .ts-connection-info-dialog, .ts-feedback-dialog, .ts-about-dialog
+) {
+  height: 100dvh;
+  border-radius: 0;
+}
+
+.ts-app.ts-mobile :where(.ts-dialog) > .ts-dialog-titlebar {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  min-height: 56px;
+  padding: 0 4px 0 16px;
+  font-size: 17px;
+  background: var(--bg-toolbar-1);
+  flex-shrink: 0;
+}
+
+.ts-app.ts-mobile :where(.ts-dialog) > .ts-dialog-titlebar button {
+  width: 44px;
+  height: 44px;
+  font-size: 20px;
+}
+
+.ts-app.ts-mobile :where(.ts-dialog) > .ts-dialog-buttons {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  margin-top: auto;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--bg-toolbar-1);
+}
+
+/* The scrolling list inside a full-screen dialog takes the free height. */
+.ts-app.ts-mobile :where(.ts-dialog) > :not(.ts-dialog-titlebar):not(.ts-dialog-buttons) {
+  min-width: 0;
+}
+
+.ts-app.ts-mobile :where(.ts-dialog) table {
+  display: block;
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+.ts-app.ts-mobile :where(.ts-dialog) button {
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 10px;
+  font-size: 15px;
+}
+
+.ts-app.ts-mobile :where(.ts-dialog) :where(select, textarea,
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"])) {
+  min-height: 44px;
+  font-size: 16px;
+  border-radius: 10px;
+  padding-left: 12px;
+  padding-right: 12px;
+  box-sizing: border-box;
+  max-width: 100%;
+}
+
+.ts-app.ts-mobile :where(.ts-dialog) :where(input[type="checkbox"], input[type="radio"]) {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.ts-app.ts-mobile :where(.ts-dialog) .ts-dialog-field {
+  font-size: 13px;
+}
+
+/* Mobile: buttons share each wrapped row evenly; log-level filters as a chip row. */
+.ts-app.ts-mobile :where(.ts-dialog) > .ts-dialog-buttons > div {
+  display: flex;
+  flex-wrap: wrap;
+  flex: 1 1 100%;
+  gap: 8px;
+}
+.ts-app.ts-mobile :where(.ts-dialog) > .ts-dialog-buttons button {
+  flex: 1 1 auto;
+}
+.ts-app.ts-mobile :where(.ts-dialog) .ts-dialog-row {
+  align-items: stretch;
+}
+.ts-app.ts-mobile .ts-log-level-row {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 6px 14px;
+}
+.ts-app.ts-mobile .ts-log-level-row > .ts-dialog-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+}
