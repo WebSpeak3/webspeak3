@@ -5477,7 +5477,7 @@ input.ts-identities-uid {
   border-radius: 12px;
   background: none;
   border: none;
-  box-shadow: none;
+  outline: none;
   font-weight: 500;
 }
 
