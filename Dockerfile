@@ -6,7 +6,7 @@ FROM --platform=$BUILDPLATFORM tonistiigi/xx:1.9.0@sha256:c64defb9ed5a91eacb37f9
 FROM --platform=$BUILDPLATFORM rust:1-bookworm AS connector-builder
 COPY --from=xx / /
 ARG TARGETPLATFORM
-RUN apt-get update && apt-get install -y --no-install-recommends cmake clang && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends cmake clang libclang-dev && rm -rf /var/lib/apt/lists/*
 RUN xx-apt-get update && xx-apt-get install -y libc6-dev gcc g++ && rm -rf /var/lib/apt/lists/*
 RUN rustup target add $(xx-cargo --print-target-triple)
 WORKDIR /src

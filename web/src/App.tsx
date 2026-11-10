@@ -391,11 +391,24 @@ const LAST_NICKNAME_KEY = "webspeak3:last-nickname";
 localStorage.removeItem("webspeak3:last-privilege-key");
 const LAST_SERVER_TYPE_KEY = "webspeak3:last-server-type";
 
-type ServerType = "teamspeak" | "teaspeak" | "auto";
+type ServerType = "teamspeak" | "teaspeak" | "auto" | "ts2";
 
 function loadServerType(): ServerType {
   const raw = localStorage.getItem(LAST_SERVER_TYPE_KEY);
-  return raw === "teamspeak" || raw === "teaspeak" || raw === "auto" ? raw : "auto";
+  return raw === "teamspeak" || raw === "teaspeak" || raw === "auto" || raw === "ts2" ? raw : "auto";
+}
+
+// The gateway's feature list, readable before connecting. TeamSpeak 2 is
+// opt-in per gateway (ENABLE_TS2), so the connect dialog only offers it then.
+const FEATURES_URL = DEMO_MODE ? null : FEEDBACK_URL.replace(/\/api\/feedback$/, "/api/features");
+let gatewayFeaturesPromise: Promise<string[]> | null = null;
+function fetchGatewayFeatures(): Promise<string[]> {
+  if (!FEATURES_URL) return Promise.resolve([]);
+  gatewayFeaturesPromise ??= fetch(FEATURES_URL)
+    .then((r) => (r.ok ? r.json() : { features: [] }))
+    .then((d) => (Array.isArray(d.features) ? d.features : []))
+    .catch(() => []);
+  return gatewayFeaturesPromise;
 }
 
 /** Everything needed to (re)open a gateway connection for one session, kept
@@ -2146,6 +2159,10 @@ function ConnectDialog({
 }) {
   const t = useT();
   const backdrop = useBackdropDismiss(onCancel);
+  const [ts2Available, setTs2Available] = useState(false);
+  useEffect(() => {
+    void fetchGatewayFeatures().then((f) => setTs2Available(f.includes("ts2")));
+  }, []);
 
   // Nova-theme-only: the "Erweiterte Optionen" toggle moves from the footer
   // (Standard) to right under the nickname field, with a rotating chevron -
@@ -2278,6 +2295,9 @@ function ConnectDialog({
                   <option value="auto">{t("connect.serverType.auto")}</option>
                   <option value="teamspeak">{t("connect.serverType.teamspeak")}</option>
                   <option value="teaspeak">{t("connect.serverType.teaspeak")}</option>
+                  {(ts2Available || serverType === "ts2") && (
+                    <option value="ts2">{t("connect.serverType.ts2")}</option>
+                  )}
                 </select>
               </label>
               <label className="ts-dialog-field">

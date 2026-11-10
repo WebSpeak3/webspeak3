@@ -32,6 +32,8 @@ use tsclientlib::{
 	ServerType, StreamItem, TextMessageTargetMode, TsError,
 };
 use tsproto_packets::commands::{CommandItem, CommandParser};
+mod ts2;
+
 use tsproto_packets::packets::{AudioData, CodecType, Direction, Flags, OutAudio, OutCommand, PacketType};
 
 /// 20ms frames at 48kHz, which is what TeamSpeak's Opus voice codec expects.
@@ -98,8 +100,9 @@ struct Args {
 	#[arg(long, env = "TS_IDENTITY", hide_env_values = true)]
 	identity: Option<String>,
 	/// Server flavour: `teamspeak` (skip TeaSpeak handshake), `teaspeak`
-	/// (always handshake), or `auto` (handshake when server sends `teaspeak=1`).
-	#[arg(long, default_value = "auto", value_parser = ["auto", "teamspeak", "teaspeak"])]
+	/// (always handshake), `auto` (handshake when server sends `teaspeak=1`),
+	/// or `ts2` for a TeamSpeak 2 server (experimental, see ts2.rs).
+	#[arg(long, default_value = "auto", value_parser = ["auto", "teamspeak", "teaspeak", "ts2"])]
 	server_type: String,
 	/// Privilege key / token (`client_default_token` in clientinit).
 	#[arg(long, alias = "token", env = "TS_PRIVILEGE_KEY", hide_env_values = true)]
@@ -867,7 +870,8 @@ fn send_server_get_variables(con: &mut tsclientlib::Connection) {
 #[tokio::main]
 async fn main() {
 	let args = Args::parse();
-	if let Err(e) = run(args).await {
+	let result = if args.server_type == "ts2" { ts2::run(args).await } else { run(args).await };
+	if let Err(e) = result {
 		emit(&Event::Error { message: e.to_string() });
 	}
 }

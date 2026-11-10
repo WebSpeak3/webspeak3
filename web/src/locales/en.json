@@ -125,6 +125,7 @@
   "connect.serverType.auto": "Auto",
   "connect.serverType.teamspeak": "TeamSpeak",
   "connect.serverType.teaspeak": "TeaSpeak",
+  "connect.serverType.ts2": "TeamSpeak 2 (experimental)",
   "connect.hotkeyProfile": "Hotkey profile:",
   "connect.soundPack": "Sound pack:",
   "connect.more": "More",

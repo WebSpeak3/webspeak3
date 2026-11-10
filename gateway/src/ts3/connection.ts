@@ -213,7 +213,7 @@ export type Ts3ConnectionEvent =
   /** TS6 Stream/Call signaling, forwarded verbatim; `args` is already unescaped. */
   | { type: "streamEvent"; name: string; args: Record<string, string> };
 
-export type ServerType = "teamspeak" | "teaspeak" | "auto";
+export type ServerType = "teamspeak" | "teaspeak" | "auto" | "ts2";
 
 export interface Ts3ConnectOptions {
   host: string;

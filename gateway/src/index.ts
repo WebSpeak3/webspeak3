@@ -13,7 +13,9 @@ import { logFeedback, logConnectionEvent } from "./activity-log.js";
 import { clientIp, createRateLimiter } from "./net.js";
 import "./telemetry.js";
 
-const SERVER_TYPES = new Set<ServerType>(["teamspeak", "teaspeak", "auto"]);
+// TeamSpeak 2 support is experimental and opt-in (ENABLE_TS2=1).
+const TS2_ENABLED = process.env.ENABLE_TS2 === "1";
+const SERVER_TYPES = new Set<ServerType>(["teamspeak", "teaspeak", "auto", ...(TS2_ENABLED ? (["ts2"] as const) : [])]);
 
 function parseServerType(value: unknown): ServerType | undefined {
   return typeof value === "string" && SERVER_TYPES.has(value as ServerType)
@@ -124,7 +126,7 @@ const WEB_DIST = process.env.WEB_DIST ?? path.resolve(__dirname, "../../web/dist
 const SERVE_STATIC = process.env.WEB_STATIC !== "0";
 
 // Sent to every browser in the "hello" message on socket open; see there.
-const GATEWAY_FEATURES = ["clientVolume", "keepalive", "chunkedUpload", "whisperPolicy", "transferLimit"];
+const GATEWAY_FEATURES = ["clientVolume", "keepalive", "chunkedUpload", "whisperPolicy", "transferLimit", ...(TS2_ENABLED ? ["ts2"] : [])];
 
 // Optional TURN relay for screen streams, also handed out in "hello". With
 // TURN_SECRET (coturn's use-auth-secret) every socket gets its own credential,
@@ -482,6 +484,13 @@ const requestHandler = (req: IncomingMessage, res: ServerResponse) => {
       const requestUrl = new URL(req.url ?? "/", "http://localhost");
       if (requestUrl.pathname === "/api/feedback") {
         await handleFeedback(req, res);
+        return;
+      }
+      if (requestUrl.pathname === "/api/features") {
+        // Same list as the "hello" message, readable before any connect
+        // (the connect dialog offers TeamSpeak 2 only when it is enabled).
+        res.writeHead(200, { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*", "Cache-Control": "public, max-age=300" });
+        res.end(JSON.stringify({ features: GATEWAY_FEATURES }));
         return;
       }
       if (requestUrl.pathname === "/api/news") {

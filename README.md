@@ -101,6 +101,7 @@ not need to be installed on the same machine, modified, or operated by you.
 | 🔁 **Seamless reconnect** | Switch or add connections mid-session without tearing down unrelated tabs; dropped connections come back on their own, with the channel tree intact |
 | ⌨️ **Keyboard & screen readers** | Arrow keys through the channel tree (exposed as an ARIA tree) and through menus, Enter joins, context-menu key opens the menu; focus-trapped dialogs, labelled toolbar buttons |
 | 🍵 **VoySpeak support** | Connects to real VoySpeak servers (formerly GreenTeaSpeak), not just TS3/TS6/TeaSpeak |
+| 📟 **TeamSpeak 2** | <sub>**EXPERIMENTAL**</sub> Voice, channels, private messages and server messages on old TS2 servers. Off by default, the gateway enables it with `ENABLE_TS2=1` |
 | 🖥️ **Screen streaming to/from TS6** | <sub>**ALPHA · UNSTABLE**</sub> Share your screen to native TeamSpeak 6 clients and watch theirs. Built on TS6's undocumented Stream/Call protocol — expect it to break; see [Roadmap](ROADMAP.md) |
 
 ## 🧱 Tech Stack
@@ -248,6 +249,7 @@ All optional; add them under `environment:` in your compose override next to `PO
 | `NEWS_TICKER` | on | Set to `0` to hide the news ticker at the bottom of the client. |
 | `NEWS_TICKER_CENTRAL` | on | Set to `0` to drop the official WebSpeak3 news (releases, new store designs, announcements) and only show your own messages. |
 | `NEWS_TICKER_MESSAGES` | – | Your own ticker messages, separated by `\|`, e.g. `Maintenance tonight at 10pm \| Welcome!` |
+| `ENABLE_TS2` | off | Set to `1` to offer **TeamSpeak 2** as a server type in the connect dialog. Experimental: voice (Speex), channel list, private messages and server messages work; channel chat depends on the server's permissions; file transfer, avatars, screen streams and admin functions aren't available on TS2. The code ships in every image, it just stays unused while this is off. |
 | `SYNC_URL` | official sync server | Account sync server your visitors use (Options → Account), e.g. `https://sync.example.com/api/sync`. Only needed if you run your own (see below). |
 
 > **Anonymous usage ping:** when the gateway starts and then once a day, it sends a random instance ID (made up on first start, stored in `instance-id` in the working directory, used for nothing else) and its version number to `gateway.webspeak3.de`. That's the only way to tell whether anyone self-hosts WebSpeak3 at all, and how many instances still run an old version, e.g. after a security fix. Nothing else is sent: no hostnames, no TeamSpeak servers, no users, no settings. The receiving side doesn't store IP addresses. The startup log says when it's on. Turn it off with `TELEMETRY=0`.

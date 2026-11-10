@@ -125,6 +125,7 @@
   "connect.serverType.auto": "Automaticky",
   "connect.serverType.teamspeak": "TeamSpeak",
   "connect.serverType.teaspeak": "TeaSpeak",
+  "connect.serverType.ts2": "TeamSpeak 2 (experimentální)",
   "connect.hotkeyProfile": "Profil klávesových zkratek:",
   "connect.soundPack": "Balíček zvuků:",
   "connect.more": "Více",
