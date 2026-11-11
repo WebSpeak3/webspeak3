@@ -5855,6 +5855,13 @@ input.ts-identities-uid {
   gap: 28px;
 }
 
+/* Feedback pinned to the drawer's bottom edge. */
+.ts-app.ts-mobile .ts-nova-menu-panel-open:not(:has(> .ts-menubar-dropdown > .ts-menu)) > .ts-menubar-feedback {
+  margin-top: auto;
+  border-top: 1px solid var(--border-soft);
+  padding-top: 12px;
+}
+
 @keyframes ts-mobile-drawer-in {
   from { transform: translateX(-100%); }
 }
