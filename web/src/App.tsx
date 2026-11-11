@@ -13134,7 +13134,7 @@ function AppInner() {
         {IS_OWN_HOSTED_INSTANCE && (
           <button
             type="button"
-            className="ts-menubar-item ts-plain-button"
+            className="ts-menubar-item ts-plain-button ts-menubar-feedback"
             onClick={() => setFeedbackOpen(true)}
           >
             💬 {t("menu.extras.feedback")}

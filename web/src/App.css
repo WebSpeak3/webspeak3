@@ -189,6 +189,11 @@
   width: 100%;
 }
 
+/* Feedback is a plain button between Extras and Help; in the ☰ panel it goes last. */
+.ts-menubar-items.ts-nova-menu-panel-open > .ts-menubar-feedback {
+  order: 1;
+}
+
 /* The panel itself docks flush against the right viewport edge, so its nested
    submenus must open leftward instead of the default rightward - opening right
    here would run straight off-screen. */
@@ -5604,7 +5609,8 @@ input.ts-identities-uid {
 }
 
 /* One submenu open: hide its siblings, its trigger becomes the back row. */
-.ts-app.ts-mobile .ts-nova-menu-panel-open:has(> .ts-menubar-dropdown > .ts-menu) > .ts-menubar-dropdown:not(:has(> .ts-menu)) {
+.ts-app.ts-mobile .ts-nova-menu-panel-open:has(> .ts-menubar-dropdown > .ts-menu) > .ts-menubar-dropdown:not(:has(> .ts-menu)),
+.ts-app.ts-mobile .ts-nova-menu-panel-open:has(> .ts-menubar-dropdown > .ts-menu) > .ts-menubar-feedback {
   display: none;
 }
 
