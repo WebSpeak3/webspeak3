@@ -332,6 +332,40 @@ impl Ts2 {
 		Ok(())
 	}
 
+	/// Sends the logout, then waits (max 1.5 s) for the server's own "player left"
+	/// for us and acks it. Until that ack the server keeps us half-present (it
+	/// resends every 100 ms) and lists us to clients joining meanwhile, who never
+	/// get a leave for that ghost.
+	async fn logout(&mut self) {
+		self.reliable(0x012c, &[]);
+		let deadline = Instant::now() + Duration::from_millis(1500);
+		let mut buf = [0u8; 2048];
+		while Instant::now() < deadline {
+			if self.pump_outbox().await.is_err() {
+				return;
+			}
+			let Ok(Ok(n)) = tokio::time::timeout(Duration::from_millis(100), self.sock.recv(&mut buf)).await else { continue };
+			let b = &buf[..n];
+			match u16_at(b, 0) {
+				0xbef0 if b.len() >= 24 => {
+					let mut ack = Vec::with_capacity(16);
+					ack.extend_from_slice(&0xbef1u16.to_le_bytes());
+					ack.extend_from_slice(&0u16.to_le_bytes());
+					ack.extend_from_slice(&self.session.to_le_bytes());
+					ack.extend_from_slice(&self.client_id.to_le_bytes());
+					ack.extend_from_slice(&b[12..16]);
+					let _ = self.sock.send(&ack).await;
+					if u16_at(b, 2) == 0x0065 && u32_at(b, 24) == self.client_id {
+						return;
+					}
+				}
+				_ => {
+					let _ = self.on_datagram(b).await;
+				}
+			}
+		}
+	}
+
 	async fn keepalive(&mut self) -> Result<()> {
 		let mut p = Vec::with_capacity(24);
 		p.extend_from_slice(&0xbef4u16.to_le_bytes());
@@ -618,10 +652,11 @@ impl Ts2 {
 		p.push(codec);
 		p.extend_from_slice(&self.session.to_le_bytes());
 		p.extend_from_slice(&self.client_id.to_le_bytes());
-		p.extend_from_slice(&self.voice_conversation.to_le_bytes());
+		// Native client 2.0.32 order (captured): packet counter, then conversation id.
+		// Swapped, the native client sees every packet as a new conversation and stutters.
 		p.extend_from_slice(&self.voice_counter.to_le_bytes());
-		// ponytail: meaning of this byte unknown (soliloque passes it through);
-		// 5 = frame count is a guess. Check against a native client capture.
+		p.extend_from_slice(&self.voice_conversation.to_le_bytes());
+		// Native client sends 5 here too (frames per packet).
 		p.push(FRAMES_PER_PACKET as u8);
 		p.extend_from_slice(&data);
 		self.voice_counter = self.voice_counter.wrapping_add(1);
@@ -811,14 +846,12 @@ which this gateway does not connect to. (Self-hosting admin? Set ALLOW_PRIVATE_T
 			}
 			line = stdin.next_line() => {
 				let Some(l) = line? else {
-					ts.reliable(0x012c, &[]);
-					ts.pump_outbox().await?;
+					ts.logout().await;
 					return Ok(());
 				};
 				let l = l.trim();
 				if l == "disconnect" || l.starts_with("disconnect ") {
-					ts.reliable(0x012c, &[]);
-					ts.pump_outbox().await?;
+					ts.logout().await;
 					emit(&Event::Disconnected { reason: "client requested".into() });
 					return Ok(());
 				} else if let Some(rest) = l.strip_prefix("audio ") {
