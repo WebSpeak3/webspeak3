@@ -1443,9 +1443,15 @@ function GroupIcon({ group, images }: { group: GroupEntry; images: Record<string
   const base64 = group.iconId >= CUSTOM_ICON_ID_THRESHOLD ? images[`/icon_${group.iconId}`] : undefined;
   if (base64) return <img className="ts-group-icon" src={iconDataUrl(base64)} alt="" title={group.name} />;
   return (
-    <span className="ts-group-badge" style={{ background: groupBadgeColor(group.iconId) }} title={group.name}>
-      {group.name.trim().charAt(0).toUpperCase() || "?"}
-    </span>
+    <svg className="ts-group-badge" width="16" height="16" viewBox="0 0 16 16" role="img" aria-label={group.name}>
+      <title>{group.name}</title>
+      <circle cx="6.5" cy="4.6" r="2.9" fill="#8b95a1" />
+      <path d="M1 14.6c0-3.3 2.4-5.6 5.5-5.6s5.5 2.3 5.5 5.6Z" fill="#8b95a1" />
+      <circle cx="11.6" cy="11.4" r="4.1" fill={groupBadgeColor(group.iconId)} stroke="var(--bg, #fff)" strokeWidth="0.9" />
+      <text x="11.6" y="13.95" textAnchor="middle" fontSize="7" fontWeight="700" fill="#fff" fontFamily="system-ui, sans-serif">
+        {group.name.trim().charAt(0).toUpperCase() || "?"}
+      </text>
+    </svg>
   );
 }
 

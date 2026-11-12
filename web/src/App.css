@@ -2364,17 +2364,10 @@
 }
 
 .ts-group-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
+  display: block;
+  width: 15px;
+  height: 15px;
   flex-shrink: 0;
-  font-size: 9px;
-  font-weight: 700;
-  line-height: 1;
-  color: #fff;
 }
 
 .ts-poke-button {
