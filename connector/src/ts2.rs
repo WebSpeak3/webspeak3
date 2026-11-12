@@ -528,8 +528,9 @@ impl Ts2 {
 				}
 				self.encoder = None;
 			}
+			// Channel deleted: u16 channel id, then the deleting player's u32 id.
 			0x0073 => {
-				self.channels.remove(&u32_at(b, 0));
+				self.channels.remove(&(u16_at(b, 0) as u32));
 			}
 			0x0074 | 0x0075 => {
 				if let Some(c) = self.channels.get_mut(&u32_at(b, 0)) {
@@ -537,6 +538,9 @@ impl Ts2 {
 				}
 			}
 			// The server refuses a command (seen for chat without the matching text permission).
+			// The server refuses a request: function code u16, then a u16 error code
+			// (seen: 0x012f channel switch into a channel that no longer exists).
+			0xff9a => emit(&Event::Error { message: format!("The TeamSpeak 2 server refused this (error {:#x}).", u16_at(b, 2)) }),
 			0xfc0f => emit(&Event::Error { message: "The TeamSpeak 2 server refused this: you lack the permission.".into() }),
 			0x0082 => {
 				let from = rpstr(b, 5);
