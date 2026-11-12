@@ -70,6 +70,8 @@
   "connect.serverType.teamspeak": "TeamSpeak",
   "connect.serverType.teaspeak": "TeaSpeak",
   "connect.serverType.ts2": "TeamSpeak 2（实验性）",
+  "connect.ts2LoginName": "TS2 账户名（留空 = 匿名）：",
+  "connect.ts2LoginPassword": "TS2 账户密码：",
   "connect.hotkeyProfile": "快捷键配置：",
   "connect.soundPack": "声音包：",
   "connect.more": "更多",

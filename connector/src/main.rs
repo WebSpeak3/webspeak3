@@ -72,7 +72,7 @@ const MAX_ICON_BYTES: u64 = 512 << 10;
 const MAX_AVATAR_BYTES: u64 = 512 << 10;
 const OUT_CHANNELS: usize = 2;
 
-#[derive(Parser, Debug)]
+#[derive(Parser, Debug, Clone)]
 #[command(author, about = "One-shot bridge: connects to a real TeamSpeak server and reports events as JSON lines on stdout")]
 struct Args {
 	/// Server address, e.g. "192.168.178.108" or "192.168.178.108:9987"
@@ -107,6 +107,12 @@ struct Args {
 	/// Privilege key / token (`client_default_token` in clientinit).
 	#[arg(long, alias = "token", env = "TS_PRIVILEGE_KEY", hide_env_values = true)]
 	privilege_key: Option<String>,
+	/// TeamSpeak 2 only: account name for a registered login (anonymous when omitted).
+	#[arg(long, env = "TS_LOGIN_NAME", hide_env_values = true)]
+	login_name: Option<String>,
+	/// TeamSpeak 2 only: password of the registered account.
+	#[arg(long, env = "TS_LOGIN_PASSWORD", hide_env_values = true)]
+	login_password: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -870,7 +876,27 @@ fn send_server_get_variables(con: &mut tsclientlib::Connection) {
 #[tokio::main]
 async fn main() {
 	let args = Args::parse();
-	let result = if args.server_type == "ts2" { ts2::run(args).await } else { run(args).await };
+	// "auto" falls back to TeamSpeak 2 when the TS3 handshake gets no answer at
+	// all; only if the gateway enables TS2 (ENABLE_TS2=1, inherited env).
+	let ts2_fallback = args.server_type == "auto" && std::env::var("ENABLE_TS2").as_deref() == Ok("1");
+	let result = if args.server_type == "ts2" {
+		ts2::run(args).await
+	} else if ts2_fallback {
+		match run(args.clone()).await {
+			Err(e) if e.to_string().contains("connection timed out") => {
+				eprintln!("no TS3 answer, trying TeamSpeak 2");
+				// Only the TS3 default port is swapped; an explicit other port is kept.
+				let mut args = args;
+				if let Some(host) = args.address.strip_suffix(":9987") {
+					args.address = host.to_string();
+				}
+				ts2::run(args).await.map_err(|_| e)
+			}
+			r => r,
+		}
+	} else {
+		run(args).await
+	};
 	if let Err(e) = result {
 		emit(&Event::Error { message: e.to_string() });
 	}

@@ -126,6 +126,8 @@
   "connect.serverType.teamspeak": "TeamSpeak",
   "connect.serverType.teaspeak": "TeaSpeak",
   "connect.serverType.ts2": "TeamSpeak 2 (آزمایشی)",
+  "connect.ts2LoginName": "نام حساب TS2 (خالی = ناشناس):",
+  "connect.ts2LoginPassword": "رمز حساب TS2:",
   "connect.hotkeyProfile": "پروفایل کلید میانبر:",
   "connect.soundPack": "بسته صوتی:",
   "connect.more": "بیشتر",

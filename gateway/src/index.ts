@@ -774,6 +774,8 @@ wss.on("connection", (socket: WebSocket, req: IncomingMessage) => {
           identity: msg.identity,
           serverType: parseServerType(msg.serverType),
           privilegeKey: parsePrivilegeKey(msg),
+          loginName: typeof msg.loginName === "string" ? msg.loginName.trim() || undefined : undefined,
+          loginPassword: typeof msg.loginPassword === "string" ? msg.loginPassword || undefined : undefined,
         };
         connection = new Ts3Connection(options);
         liveConnections.add(connection);

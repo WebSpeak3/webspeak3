@@ -126,6 +126,8 @@
   "connect.serverType.teamspeak": "TeamSpeak",
   "connect.serverType.teaspeak": "TeaSpeak",
   "connect.serverType.ts2": "TeamSpeak 2 (experimentální)",
+  "connect.ts2LoginName": "Název účtu TS2 (prázdné = anonymně):",
+  "connect.ts2LoginPassword": "Heslo účtu TS2:",
   "connect.hotkeyProfile": "Profil klávesových zkratek:",
   "connect.soundPack": "Balíček zvuků:",
   "connect.more": "Více",

@@ -732,11 +732,21 @@ async fn login(sock: &UdpSocket, args: &Args) -> Result<Vec<u8>> {
 	p.extend_from_slice(&[0; 4]); // CRC
 	p.extend_from_slice(&pstr("TeamSpeak"));
 	p.extend_from_slice(&pstr("Linux"));
-	p.extend_from_slice(&[2, 0, 0, 0, 0x20, 0, 0x3c, 0, 1, 1]);
-	// Anonymous login: no account name, the server password goes in the
-	// password field.
-	p.extend_from_slice(&pstr(""));
-	p.extend_from_slice(&pstr(args.server_password.as_deref().unwrap_or("")));
+	p.extend_from_slice(&[2, 0, 0, 0, 0x20, 0, 0x3c, 0, 1]);
+	// Registered login (2): account name + its password. Anonymous (1): no
+	// account name, the server password goes in the password field.
+	match &args.login_name {
+		Some(name) if !name.is_empty() => {
+			p.push(2);
+			p.extend_from_slice(&pstr(name));
+			p.extend_from_slice(&pstr(args.login_password.as_deref().unwrap_or("")));
+		}
+		_ => {
+			p.push(1);
+			p.extend_from_slice(&pstr(""));
+			p.extend_from_slice(&pstr(args.server_password.as_deref().unwrap_or("")));
+		}
+	}
 	p.extend_from_slice(&pstr(&args.nickname));
 	crc(&mut p, 16);
 	let mut buf = [0u8; 2048];
@@ -778,7 +788,7 @@ which this gateway does not connect to. (Self-hosting admin? Set ALLOW_PRIVATE_T
 
 	let reply = login(&sock, &args).await?;
 	if reply[89..92] != [0, 0, 0] {
-		bail!("The TeamSpeak 2 server rejected the login (wrong server password, or nickname not allowed).");
+		bail!("The TeamSpeak 2 server rejected the login (wrong server password, wrong account name or password, or nickname not allowed).");
 	}
 	// Unlike the 30-byte fields, the welcome message's length byte can go up to 255.
 	let welcome_len = reply[180] as usize;

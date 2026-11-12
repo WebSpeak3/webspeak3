@@ -126,6 +126,8 @@
   "connect.serverType.teamspeak": "TeamSpeak",
   "connect.serverType.teaspeak": "TeaSpeak",
   "connect.serverType.ts2": "TeamSpeak 2 (experimentell)",
+  "connect.ts2LoginName": "TS2-Kontoname (leer = anonym):",
+  "connect.ts2LoginPassword": "TS2-Kontopasswort:",
   "connect.hotkeyProfile": "Hotkeyprofil:",
   "connect.soundPack": "Sound Pack:",
   "connect.more": "Mehr",

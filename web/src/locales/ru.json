@@ -126,6 +126,8 @@
   "connect.serverType.teamspeak": "TeamSpeak",
   "connect.serverType.teaspeak": "TeaSpeak",
   "connect.serverType.ts2": "TeamSpeak 2 (экспериментально)",
+  "connect.ts2LoginName": "Имя учётной записи TS2 (пусто = анонимно):",
+  "connect.ts2LoginPassword": "Пароль учётной записи TS2:",
   "connect.hotkeyProfile": "Профиль горячих клавиш:",
   "connect.soundPack": "Звуковой пакет:",
   "connect.more": "Больше",

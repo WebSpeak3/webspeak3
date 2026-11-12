@@ -228,6 +228,9 @@ export interface Ts3ConnectOptions {
   serverType?: ServerType;
   /** One-time privilege key / token to redeem on connect. */
   privilegeKey?: string;
+  /** TeamSpeak 2 registered account (anonymous when omitted). */
+  loginName?: string;
+  loginPassword?: string;
 }
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -280,6 +283,8 @@ export class Ts3Connection {
     if (this.options.channelPassword) env.TS_CHANNEL_PASSWORD = this.options.channelPassword;
     if (this.options.identity) env.TS_IDENTITY = this.options.identity;
     if (this.options.privilegeKey) env.TS_PRIVILEGE_KEY = this.options.privilegeKey;
+    if (this.options.loginName) env.TS_LOGIN_NAME = this.options.loginName;
+    if (this.options.loginPassword) env.TS_LOGIN_PASSWORD = this.options.loginPassword;
     this.child = spawn(CONNECTOR_BIN, args, { env });
 
     // The connector can exit on its own (e.g. the TS3 server drops it) and close

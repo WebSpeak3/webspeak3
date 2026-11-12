@@ -421,6 +421,9 @@ type ConnectParams = {
   channelPassword: string;
   defaultChannel: string;
   privilegeKey: string;
+  /** TeamSpeak 2 registered account (anonymous when empty). */
+  loginName?: string;
+  loginPassword?: string;
   serverType: ServerType;
   identityId: string | null;
   favoriteId: string | null;
@@ -2106,6 +2109,8 @@ function ConnectDialog({
   defaultChannel,
   privilegeKey,
   serverType,
+  loginName,
+  loginPassword,
   expanded,
   connecting,
   identities,
@@ -2117,6 +2122,8 @@ function ConnectDialog({
   onDefaultChannelChange,
   onPrivilegeKeyChange,
   onServerTypeChange,
+  onLoginNameChange,
+  onLoginPasswordChange,
   onActiveIdentityChange,
   onToggleExpanded,
   onConnect,
@@ -2133,6 +2140,8 @@ function ConnectDialog({
   defaultChannel: string;
   privilegeKey: string;
   serverType: ServerType;
+  loginName: string;
+  loginPassword: string;
   expanded: boolean;
   connecting: boolean;
   identities: Identity[];
@@ -2143,6 +2152,8 @@ function ConnectDialog({
   onChannelPasswordChange: (v: string) => void;
   onDefaultChannelChange: (v: string) => void;
   onPrivilegeKeyChange: (v: string) => void;
+  onLoginNameChange: (v: string) => void;
+  onLoginPasswordChange: (v: string) => void;
   onServerTypeChange: (v: ServerType) => void;
   onActiveIdentityChange: (id: string) => void;
   onToggleExpanded: () => void;
@@ -2300,6 +2311,27 @@ function ConnectDialog({
                   )}
                 </select>
               </label>
+              {serverType === "ts2" && (
+                <>
+                  <label className="ts-dialog-field">
+                    {t("connect.ts2LoginName")}
+                    <input
+                      value={loginName}
+                      onChange={(e) => onLoginNameChange(e.target.value)}
+                      autoComplete="username"
+                    />
+                  </label>
+                  <label className="ts-dialog-field">
+                    {t("connect.ts2LoginPassword")}
+                    <input
+                      type="password"
+                      value={loginPassword}
+                      onChange={(e) => onLoginPasswordChange(e.target.value)}
+                      autoComplete="current-password"
+                    />
+                  </label>
+                </>
+              )}
               <label className="ts-dialog-field">
                 {t("connect.hotkeyProfile")}
                 <select disabled defaultValue="Standard">
@@ -8824,6 +8856,8 @@ function AppInner() {
   const [channelPassword, setChannelPassword] = useState("");
   const [defaultChannel, setDefaultChannel] = useState("");
   const [privilegeKey, setPrivilegeKey] = useState("");
+  const [loginName, setLoginName] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
   const [serverType, setServerType] = useState<ServerType>(loadServerType);
   // Prompt shown when switching into a password-protected channel mid-session
   // (the initial-connect "default channel" password above is a separate field).
@@ -9920,6 +9954,8 @@ function AppInner() {
           identity: connectIdentityBlob || undefined,
           privilegeKey: connectPrivilegeKey.trim() || undefined,
           serverType: connectServerType || "auto",
+          loginName: (connectServerType === "ts2" && params.loginName?.trim()) || undefined,
+          loginPassword: (connectServerType === "ts2" && params.loginPassword) || undefined,
         })
       );
     };
@@ -10594,6 +10630,8 @@ function AppInner() {
       defaultChannel: overrides?.defaultChannel ?? defaultChannel,
       privilegeKey: overrides?.privilegeKey ?? privilegeKey,
       serverType: overrides?.serverType ?? serverType,
+      loginName,
+      loginPassword,
       identityId: activeIdentityId,
       favoriteId: overrides?.favoriteId !== undefined ? overrides.favoriteId : null,
     };
@@ -13499,6 +13537,8 @@ function AppInner() {
           defaultChannel={defaultChannel}
           privilegeKey={privilegeKey}
           serverType={serverType}
+          loginName={loginName}
+          loginPassword={loginPassword}
           expanded={connectDialogExpanded}
           connecting={connecting}
           identities={identities}
@@ -13510,6 +13550,8 @@ function AppInner() {
           onDefaultChannelChange={setDefaultChannel}
           onPrivilegeKeyChange={setPrivilegeKey}
           onServerTypeChange={setServerType}
+          onLoginNameChange={setLoginName}
+          onLoginPasswordChange={setLoginPassword}
           onActiveIdentityChange={handleActiveIdentityChange}
           onToggleExpanded={() => setConnectDialogExpanded((v) => !v)}
           onConnect={() => handleConnect({ host: dialogHost })}
