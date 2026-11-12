@@ -1483,6 +1483,7 @@ function ChannelTree({
   ownClientId,
   talkers,
   serverGroups,
+  channelGroups = null,
   groupIconImages,
   selected,
   sessionKey,
@@ -1501,6 +1502,8 @@ function ChannelTree({
   ownClientId: number | null;
   talkers: Set<number>;
   serverGroups: GroupEntry[] | null;
+  /** For the channel group icon, shown after the server group icons like in the native client. */
+  channelGroups?: GroupEntry[] | null;
   groupIconImages: Record<string, string>;
   selected: SelectedItem | null;
   /** Identifies which multi-join tab this tree belongs to, so the manual
@@ -1527,12 +1530,12 @@ function ChannelTree({
   const children = channels.filter((c) => c.parent === parent).sort((a, b) => a.order - b.order);
   if (children.length === 0) return null;
 
+  // Server group icons, then the channel group icon (the flag follows last).
   const clientGroupBadges = (client: ClientInfo): GroupEntry[] =>
-    serverGroups
-      ? client.serverGroups
-          .map((gid) => serverGroups.find((g) => g.id === gid))
-          .filter((g): g is GroupEntry => !!g && g.iconId !== 0)
-      : [];
+    [
+      ...(serverGroups ? client.serverGroups.map((gid) => serverGroups.find((g) => g.id === gid)) : []),
+      channelGroups?.find((g) => g.id === client.channelGroup),
+    ].filter((g): g is GroupEntry => !!g && g.iconId !== 0);
 
   // "Own channel" mode keeps the own channel and the channels above it open.
   const ownPath = new Set<number>();
@@ -1605,6 +1608,7 @@ function ChannelTree({
             ownClientId={ownClientId}
             talkers={talkers}
             serverGroups={serverGroups}
+            channelGroups={channelGroups}
             groupIconImages={groupIconImages}
             selected={selected}
             sessionKey={sessionKey}
@@ -11142,6 +11146,10 @@ function AppInner() {
     if (!connected || serverGroups) return;
     socketRef.current?.send(JSON.stringify({ type: "getServerGroupList" }));
   }, [connected, serverGroups]);
+  useEffect(() => {
+    if (!connected || channelGroups) return;
+    socketRef.current?.send(JSON.stringify({ type: "getChannelGroupList" }));
+  }, [connected, channelGroups]);
 
   // Same icon-file cache as the server icons dialog (fileDownloadData for
   // cid 0 always lands in serverIconImages, regardless of who asked) - fetch
@@ -11155,13 +11163,14 @@ function AppInner() {
   useEffect(() => {
     if (!serverGroups) return;
     const iconById = new Map(serverGroups.map((g) => [g.id, g.iconId]));
+    const channelIconById = new Map((channelGroups ?? []).map((g) => [g.id, g.iconId]));
     // Plus every group listed in an open group menu, so unassigned ones show their icon too.
     const menuGroups = !groupAssignTarget
       ? []
       : ((groupAssignTarget.kind === "channel" ? channelGroups : serverGroups) ?? []);
     const wantedIconIds = new Set(
       clients
-        .flatMap((c) => c.serverGroups.map((gid) => iconById.get(gid) ?? 0))
+        .flatMap((c) => [...c.serverGroups.map((gid) => iconById.get(gid) ?? 0), channelIconById.get(c.channelGroup) ?? 0])
         .concat(menuGroups.map((g) => g.iconId))
         .filter((id) => id >= CUSTOM_ICON_ID_THRESHOLD)
     );
@@ -14608,6 +14617,7 @@ function AppInner() {
                   ownClientId={ownClientId ?? ownClient?.id ?? null}
                   talkers={displayTalkers}
                   serverGroups={serverGroups}
+                  channelGroups={channelGroups}
                   groupIconImages={serverIconImages}
                   selected={selected}
                   sessionKey={activeSessionId ?? ""}
