@@ -1309,15 +1309,30 @@ function ChannelIcon() {
 }
 
 /** GTS2-style talk lamp: blue idle / green talking / muted mic. */
+/** Red "off" badge in the lamp's bottom-right corner, shared by the mute icons. */
+const OFF_BADGE = (
+  <>
+    <circle cx="10.35" cy="10.35" r="2.55" fill="#e53935" stroke="#1a1a1a" strokeWidth="0.55" />
+    <path d="M9.35 9.35l2 2M11.35 9.35l-2 2" stroke="#fff" strokeWidth="1.1" strokeLinecap="round" />
+  </>
+);
+
+/** The status slot in front of a client's name. Like the native client, away
+ *  and mute replace the talk dot instead of being listed after the name.
+ *  Order as in TeamSpeak: away, sound muted, mic muted, talking/idle. */
 function TalkLamp({
   talking,
   inputMuted,
   inputHardwareEnabled,
+  outputMuted = false,
+  away = false,
   commander = false,
 }: {
   talking: boolean;
   inputMuted: boolean;
   inputHardwareEnabled: boolean;
+  outputMuted?: boolean;
+  away?: boolean;
   /** Channel commander: drawn as its own lamp when the design option asks for it. */
   commander?: boolean;
 }) {
@@ -1326,37 +1341,54 @@ function TalkLamp({
   const muted = inputMuted || !inputHardwareEnabled;
   const asCommander = commander && tree.commanderLamp;
 
+  const icon = (title: string, packIcon: string, paths: React.ReactNode) => (
+    <span className="ts-talk-lamp ts-talk-lamp-muted" title={title} aria-hidden="true" data-pack-icon={packIcon}>
+      <svg width="14" height="14" viewBox="0 0 14 14" focusable="false">
+        {paths}
+      </svg>
+    </span>
+  );
+
+  if (away) {
+    return icon(
+      t("tree.away"),
+      "away",
+      <path d="M8.6 1.6a5.4 5.4 0 1 0 3.8 9.2A4.4 4.4 0 0 1 8.6 1.6Z" fill="#8fa6c4" stroke="#5f7694" strokeWidth="0.6" />
+    );
+  }
+
+  if (outputMuted) {
+    return icon(
+      t("tree.soundMuted"),
+      "soundMuted",
+      <>
+        <path d="M1.6 5h2.3l3.2-2.7v8.6L3.9 8.2H1.6Z" fill="#9aa3ad" stroke="#8a939c" strokeWidth="0.5" strokeLinejoin="round" />
+        <path d="M8.6 4.6c.7.6 1 1.3 1 2s-.3 1.4-1 2" fill="none" stroke="#8a939c" strokeWidth="1.1" strokeLinecap="round" />
+        {OFF_BADGE}
+      </>
+    );
+  }
+
   if (muted) {
-    return (
-      <span
-        className="ts-talk-lamp ts-talk-lamp-muted"
-        title={t("tree.micMuted")}
-        aria-hidden="true"
-        data-pack-icon={inputMuted ? "micMuted" : "hardwareMicMuted"}
-      >
-        <svg width="14" height="14" viewBox="0 0 14 14" focusable="false">
-          <path
-            d="M7 1.4c-1.15 0-2.05.9-2.05 2.05v3.1c0 1.15.9 2.05 2.05 2.05s2.05-.9 2.05-2.05v-3.1C9.05 2.3 8.15 1.4 7 1.4Z"
-            fill="#9aa3ad"
-          />
-          <path
-            d="M3.2 6.4v.4c0 2 1.7 3.55 3.8 3.55s3.8-1.55 3.8-3.55v-.4"
-            fill="none"
-            stroke="#8a939c"
-            strokeWidth="1.15"
-            strokeLinecap="round"
-          />
-          <path d="M7 10.35v2" stroke="#8a939c" strokeWidth="1.15" strokeLinecap="round" />
-          <path d="M5.2 12.35h3.6" stroke="#8a939c" strokeWidth="1.15" strokeLinecap="round" />
-          <circle cx="10.35" cy="10.35" r="2.55" fill="#e53935" stroke="#1a1a1a" strokeWidth="0.55" />
-          <path
-            d="M9.35 9.35l2 2M11.35 9.35l-2 2"
-            stroke="#fff"
-            strokeWidth="1.1"
-            strokeLinecap="round"
-          />
-        </svg>
-      </span>
+    return icon(
+      t("tree.micMuted"),
+      inputMuted ? "micMuted" : "hardwareMicMuted",
+      <>
+        <path
+          d="M7 1.4c-1.15 0-2.05.9-2.05 2.05v3.1c0 1.15.9 2.05 2.05 2.05s2.05-.9 2.05-2.05v-3.1C9.05 2.3 8.15 1.4 7 1.4Z"
+          fill="#9aa3ad"
+        />
+        <path
+          d="M3.2 6.4v.4c0 2 1.7 3.55 3.8 3.55s3.8-1.55 3.8-3.55v-.4"
+          fill="none"
+          stroke="#8a939c"
+          strokeWidth="1.15"
+          strokeLinecap="round"
+        />
+        <path d="M7 10.35v2" stroke="#8a939c" strokeWidth="1.15" strokeLinecap="round" />
+        <path d="M5.2 12.35h3.6" stroke="#8a939c" strokeWidth="1.15" strokeLinecap="round" />
+        {OFF_BADGE}
+      </>
     );
   }
 
@@ -1383,15 +1415,13 @@ function TalkLamp({
 function ClientStatusIcons({ client }: { client: ClientInfo }) {
   const t = useT();
   const { tree } = useContext(DisplayPrefsContext);
-  // Mute is shown on the TalkLamp; keep secondary flags here.
+  // Away and mute are shown on the TalkLamp; keep secondary flags here.
   return (
     <span className="ts-status-icons">
       {client.isChannelCommander && !tree.commanderLamp && <span title={t("tree.channelCommander")}>⭐</span>}
-      {client.away && <span title={t("tree.away")} data-pack-icon="away">💤</span>}
       {!client.inputMuted && client.inputHardwareEnabled && !client.hasTalkPower && (
         <span title={t("tree.noTalkPower")}>🔒</span>
       )}
-      {client.outputMuted && <span title={t("tree.soundMuted")} data-pack-icon="soundMuted">🔕</span>}
       {client.isStreaming && <span title={t("tree.streaming")}>📺</span>}
     </span>
   );
@@ -1754,6 +1784,8 @@ function ChannelTree({
                       }
                       inputMuted={c.inputMuted}
                       inputHardwareEnabled={c.inputHardwareEnabled}
+                      outputMuted={c.outputMuted}
+                      away={c.away}
                       commander={c.isChannelCommander}
                     />
                     <span className="ts-client-status-leading">
@@ -1970,6 +2002,8 @@ function InfoPanel({
             talking={false}
             inputMuted={client.inputMuted}
             inputHardwareEnabled={client.inputHardwareEnabled}
+            outputMuted={client.outputMuted}
+            away={client.away}
           />
           <span>{client.name}</span>
         </div>
