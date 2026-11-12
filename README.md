@@ -397,6 +397,8 @@ The UI texts live in flat JSON files in [`web/src/locales/`](web/src/locales/), 
 
 The vast majority of this project's code was written by [Claude Code](https://claude.com/claude-code) (Anthropic's Claude), working iteratively with the repo owner one feature at a time.
 
+Country flags use the [Twemoji Country Flags](https://github.com/talkjs/country-flag-emoji-polyfill) font, artwork from [Twemoji](https://github.com/twitter/twemoji) under [CC-BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+
 ## 🌈 In Memory of Akimo
 
 <!-- Permanent: never remove this section. -->

@@ -1350,10 +1350,10 @@ function TalkLamp({
   );
 
   if (away) {
-    return icon(
-      t("tree.away"),
-      "away",
-      <path d="M8.6 1.6a5.4 5.4 0 1 0 3.8 9.2A4.4 4.4 0 0 1 8.6 1.6Z" fill="#8fa6c4" stroke="#5f7694" strokeWidth="0.6" />
+    return (
+      <span className="ts-talk-lamp ts-talk-lamp-muted ts-talk-lamp-away" title={t("tree.away")} aria-hidden="true" data-pack-icon="away">
+        💤
+      </span>
     );
   }
 
@@ -1797,7 +1797,6 @@ function ChannelTree({
                       className="ts-client-avatar"
                       isSelf={c.id === ownClientId}
                     />
-                    {tree.flags && countryFlag(c.country) && <span title={c.country}>{countryFlag(c.country)}</span>}
                     <span className="ts-tree-label">{c.name}</span>
                     {tree.awayMessage && c.away && c.awayMessage && (
                       <span className="ts-client-away-message">({c.awayMessage})</span>
@@ -1806,6 +1805,9 @@ function ChannelTree({
                       {clientGroupBadges(c).map((g) => (
                         <GroupIcon key={g.id} group={g} images={groupIconImages} />
                       ))}
+                      {tree.flags && countryFlag(c.country) && (
+                        <span className="ts-flag" title={c.country}>{countryFlag(c.country)}</span>
+                      )}
                     </span>
                   </div>
                 </li>
@@ -2014,7 +2016,7 @@ function InfoPanel({
           <div className="ts-info-row">
             <span>{t("info.country")}</span>{" "}
             <span>
-              {countryFlag(client.country) ? `${countryFlag(client.country)} ` : ""}
+              {countryFlag(client.country) && <span className="ts-flag">{countryFlag(client.country)} </span>}
               {client.country}
             </span>
           </div>
