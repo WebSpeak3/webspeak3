@@ -583,6 +583,7 @@ const wss = new WebSocketServer({
     }
     const ip = clientIp(req);
     if (MAX_CONNECTIONS_PER_IP > 0 && (connectionsPerIp.get(ip) ?? 0) >= MAX_CONNECTIONS_PER_IP) {
+      console.warn(`[ratelimit] too many open connections from one IP (limit ${MAX_CONNECTIONS_PER_IP})`);
       return done(false, 429, "Too many connections");
     }
     done(true);
