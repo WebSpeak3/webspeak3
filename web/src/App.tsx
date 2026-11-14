@@ -401,14 +401,73 @@ function loadServerType(): ServerType {
 // The gateway's feature list, readable before connecting. TeamSpeak 2 is
 // opt-in per gateway (ENABLE_TS2), so the connect dialog only offers it then.
 const FEATURES_URL = DEMO_MODE ? null : FEEDBACK_URL.replace(/\/api\/feedback$/, "/api/features");
-let gatewayFeaturesPromise: Promise<string[]> | null = null;
+type GatewayInfo = { features?: unknown; turnstileSiteKey?: unknown };
+let gatewayInfoPromise: Promise<GatewayInfo> | null = null;
+function fetchGatewayInfo(): Promise<GatewayInfo> {
+  if (!FEATURES_URL) return Promise.resolve({});
+  gatewayInfoPromise ??= fetch(FEATURES_URL)
+    .then((r) => (r.ok ? r.json() : {}))
+    .catch(() => ({}));
+  return gatewayInfoPromise;
+}
 function fetchGatewayFeatures(): Promise<string[]> {
-  if (!FEATURES_URL) return Promise.resolve([]);
-  gatewayFeaturesPromise ??= fetch(FEATURES_URL)
-    .then((r) => (r.ok ? r.json() : { features: [] }))
-    .then((d) => (Array.isArray(d.features) ? d.features : []))
-    .catch(() => []);
-  return gatewayFeaturesPromise;
+  return fetchGatewayInfo().then((d) => (Array.isArray(d.features) ? d.features : []));
+}
+
+// Cloudflare Turnstile bot check, only when the gateway asks for it
+// ("turnstileRequired"). Invisible for most visitors; the widget only shows
+// up when Cloudflare wants an interaction. The gateway then hands out a pass
+// (kept here) so later connects and reconnects skip the check.
+const TURNSTILE_PASS_KEY = "ws3.turnstilePass";
+type TurnstileApi = {
+  render: (el: HTMLElement, opts: Record<string, unknown>) => string;
+  remove: (id: string) => void;
+};
+let turnstileScript: Promise<TurnstileApi> | null = null;
+function loadTurnstile(): Promise<TurnstileApi> {
+  turnstileScript ??= new Promise((resolve, reject) => {
+    const s = document.createElement("script");
+    s.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
+    s.async = true;
+    s.onload = () => {
+      const api = (window as unknown as { turnstile?: TurnstileApi }).turnstile;
+      if (api) resolve(api);
+      else reject(new Error("turnstile missing"));
+    };
+    s.onerror = () => {
+      turnstileScript = null;
+      reject(new Error("turnstile blocked"));
+    };
+    document.head.appendChild(s);
+  });
+  return turnstileScript;
+}
+async function getTurnstileToken(): Promise<string> {
+  const { turnstileSiteKey } = await fetchGatewayInfo();
+  if (typeof turnstileSiteKey !== "string") return "";
+  try {
+    const api = await loadTurnstile();
+    const box = document.createElement("div");
+    box.className = "ts-turnstile";
+    document.body.appendChild(box);
+    return await new Promise<string>((resolve) => {
+      let id = "";
+      const done = (token: string) => {
+        if (id) api.remove(id);
+        box.remove();
+        resolve(token);
+      };
+      id = api.render(box, {
+        sitekey: turnstileSiteKey,
+        appearance: "interaction-only",
+        callback: done,
+        "error-callback": () => done(""),
+        "timeout-callback": () => done(""),
+      });
+    });
+  } catch {
+    return "";
+  }
 }
 
 /** Everything needed to (re)open a gateway connection for one session, kept
@@ -9987,10 +10046,17 @@ function AppInner() {
     const connectFavoriteId = params.favoriteId;
     const connectIdentityBlob = identities.find((i) => i.id === connectIdentityId)?.blob ?? undefined;
 
-    const onopen = () => {
-      logClient("info", "Connection", `Connecting to ${connectHost}…`);
+    const sendConnect = (extra: Record<string, unknown> = {}) => {
+      let turnstilePass: string | undefined;
+      try {
+        turnstilePass = localStorage.getItem(TURNSTILE_PASS_KEY) ?? undefined;
+      } catch {
+        /* storage blocked */
+      }
       socket.send(
         JSON.stringify({
+          ...extra,
+          turnstilePass,
           type: "connect",
           host: connectHost,
           nickname: connectNickname,
@@ -10004,6 +10070,10 @@ function AppInner() {
           loginPassword: (connectServerType === "ts2" && params.loginPassword) || undefined,
         })
       );
+    };
+    const onopen = () => {
+      logClient("info", "Connection", `Connecting to ${connectHost}…`);
+      sendConnect();
     };
 
     // Downloads arrive in pieces (see the connector's TRANSFER_CHUNK_BYTES),
@@ -10042,6 +10112,20 @@ function AppInner() {
       if (data.type === "hello") {
         setGatewayFeatures(new Set(Array.isArray(data.features) ? data.features : []));
         setTurnServers(Array.isArray(data.iceServers) ? data.iceServers : []);
+        return;
+      }
+      if (data.type === "turnstileRequired") {
+        void getTurnstileToken().then((turnstileToken) => {
+          if (socket.readyState === WebSocket.OPEN) sendConnect({ turnstileToken });
+        });
+        return;
+      }
+      if (data.type === "turnstilePass") {
+        try {
+          localStorage.setItem(TURNSTILE_PASS_KEY, String(data.pass));
+        } catch {
+          /* storage blocked: the check just runs again next time */
+        }
         return;
       }
 
@@ -10424,7 +10508,13 @@ function AppInner() {
             appendLog({ text: data.message, kind: "error" });
           } else {
             setConnecting(false);
-            setConnectError(data.code === "gateway_full" ? t("connectError.gatewayFull") : data.message);
+            setConnectError(
+              data.code === "gateway_full"
+                ? t("connectError.gatewayFull")
+                : data.code === "turnstile_failed"
+                  ? t("connectError.botCheck")
+                  : data.message
+            );
             updateTabMeta(sessionId, { connecting: false, connected: false });
           }
           break;

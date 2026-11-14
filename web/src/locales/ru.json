@@ -718,6 +718,7 @@
   "serverContext.disconnect": "Отключиться",
   "connectError.dismiss": "Закрыть",
   "connectError.gatewayFull": "Шлюз сейчас переполнен. Попробуйте через несколько минут – или разверните WebSpeak3 у себя: github.com/WebSpeak3/webspeak3",
+  "connectError.botCheck": "Проверка на бота не пройдена. Обновите страницу и попробуйте снова. Блокировщики рекламы или скриптов могут мешать проверке.",
   "dialog.close": "Закрыть",
   "sounds.title": "Звуки",
   "sounds.subtitle": "Настройка звуковых уведомлений о событиях",

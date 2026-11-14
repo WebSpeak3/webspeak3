@@ -11,6 +11,7 @@ import { handleStore } from "./store.js";
 import { handleNewsConfig } from "./news.js";
 import { logFeedback, logConnectionEvent } from "./activity-log.js";
 import { clientIp, createRateLimiter } from "./net.js";
+import { TURNSTILE_ENABLED, TURNSTILE_SITE_KEY, isValidPass, issuePass, verifyToken } from "./turnstile.js";
 import "./telemetry.js";
 
 // TeamSpeak 2 support is experimental and opt-in (ENABLE_TS2=1).
@@ -490,7 +491,7 @@ const requestHandler = (req: IncomingMessage, res: ServerResponse) => {
         // Same list as the "hello" message, readable before any connect
         // (the connect dialog offers TeamSpeak 2 only when it is enabled).
         res.writeHead(200, { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*", "Cache-Control": "public, max-age=300" });
-        res.end(JSON.stringify({ features: GATEWAY_FEATURES }));
+        res.end(JSON.stringify({ features: GATEWAY_FEATURES, ...(TURNSTILE_ENABLED ? { turnstileSiteKey: TURNSTILE_SITE_KEY } : {}) }));
         return;
       }
       if (requestUrl.pathname === "/api/news") {
@@ -754,6 +755,21 @@ wss.on("connection", (socket: WebSocket, req: IncomingMessage) => {
             JSON.stringify({ type: "error", message: "Too many connection attempts. Please wait a minute." }),
           );
           break;
+        }
+        if (TURNSTILE_ENABLED && !isValidPass(msg.turnstilePass, ip)) {
+          // No (valid) pass yet: ask the browser to solve the check, it
+          // resends this connect with the token.
+          if (msg.turnstileToken === undefined) {
+            socket.send(JSON.stringify({ type: "turnstileRequired" }));
+            break;
+          }
+          if (!(await verifyToken(msg.turnstileToken, ip))) {
+            socket.send(
+              JSON.stringify({ type: "error", code: "turnstile_failed", message: "Bot check failed. Please try again." }),
+            );
+            break;
+          }
+          socket.send(JSON.stringify({ type: "turnstilePass", pass: issuePass(ip) }));
         }
         // Replacing a connection on the same socket: tear down the previous
         // connector so we don't leak processes.

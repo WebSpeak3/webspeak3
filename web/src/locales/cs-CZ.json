@@ -718,6 +718,7 @@
   "serverContext.disconnect": "Odpojit",
   "connectError.dismiss": "Zavřít",
   "connectError.gatewayFull": "Brána je právě plná. Zkus to za pár minut znovu – nebo si WebSpeak3 hostuj sám: github.com/WebSpeak3/webspeak3",
+  "connectError.botCheck": "Kontrola proti botům selhala. Obnov stránku a zkus to znovu. Blokátory reklam nebo skriptů mohou kontrole bránit.",
   "dialog.close": "Zavřít",
   "sounds.title": "Zvuky",
   "sounds.subtitle": "Nastavit zvuková upozornění na události",

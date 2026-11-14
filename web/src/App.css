@@ -5915,3 +5915,12 @@ input.ts-identities-uid {
 .ts-app.ts-mobile.ts-design-ide .ts-tree-panel {
   max-height: none;
 }
+
+/* Cloudflare Turnstile: empty unless Cloudflare wants an interaction. */
+.ts-turnstile {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10000;
+}

@@ -718,6 +718,7 @@
   "serverContext.disconnect": "Verbindung trennen",
   "connectError.dismiss": "Schließen",
   "connectError.gatewayFull": "Das Gateway ist gerade voll. Versuch es in ein paar Minuten nochmal – oder hoste WebSpeak3 selbst: github.com/WebSpeak3/webspeak3",
+  "connectError.botCheck": "Bot-Prüfung fehlgeschlagen. Bitte lade die Seite neu und versuch es noch mal. Werbe- oder Skriptblocker können die Prüfung stören.",
   "dialog.close": "Schließen",
   "sounds.title": "Sounds",
   "sounds.subtitle": "Sound-Benachrichtigungen für Ereignisse festlegen",
