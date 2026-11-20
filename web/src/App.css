@@ -2042,6 +2042,17 @@
   font-style: italic;
 }
 
+/* Disconnected/connecting: centered in the otherwise empty tree panel. */
+.ts-tree-panel > .ts-tree-empty:only-child {
+  box-sizing: border-box;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
 .ts-tree-empty > button,
 .ts-tree-empty > a {
   display: block;
@@ -2050,6 +2061,7 @@
 }
 
 .ts-tree-empty > .ts-mobile-connect-btn {
+  flex: none;
   min-height: 40px;
   padding: 0 1.5rem;
   cursor: pointer;
@@ -5456,11 +5468,6 @@ input.ts-identities-uid {
 
 /* Disconnected: the header already says so, keep the panel calm and centered. */
 .ts-app.ts-mobile .ts-tree-panel > .ts-tree-empty:only-child {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
   font-style: normal;
   font-size: 16px;
   color: var(--text-muted);
