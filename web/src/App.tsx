@@ -2332,6 +2332,7 @@ function ConnectDialog({
               <input
                 autoFocus
                 value={host}
+                placeholder={t("connect.hostPlaceholder")}
                 disabled={SERVER_CHOICES.length === 1}
                 onChange={(e) => onHostChange(e.target.value)}
               />
@@ -8952,7 +8953,7 @@ function AppInner() {
   const [host, setHost] = useState(
     () =>
       localStorage.getItem(LAST_HOST_KEY) ??
-      (DEMO_MODE ? DEMO_HOST : loadDesignTheme() === "nova" ? "" : "localhost")
+      (DEMO_MODE ? DEMO_HOST : "")
   );
   const [nickname, setNickname] = useState(
     () => localStorage.getItem(LAST_NICKNAME_KEY) ?? (DEMO_MODE ? "Guest" : "")
@@ -14726,7 +14727,28 @@ function AppInner() {
                 />
               </>
             ) : (
-              <div className="ts-tree-empty">{t("tree.notConnected")}</div>
+              <div className="ts-tree-empty">
+                {connecting ? (
+                  <>
+                    <span className="ts-spinner" aria-hidden="true" /> {t("tree.connectingTo", { host })}
+                    <button onClick={handleDisconnect}>{t("connect.cancel")}</button>
+                  </>
+                ) : (
+                  <>
+                    {t("tree.notConnected")}
+                    {!mobile && (
+                      <button className="ts-mobile-connect-btn" onClick={() => setConnectDialogOpen(true)}>
+                        {t("menu.connections.connect")}
+                      </button>
+                    )}
+                    {!DEMO_MODE && (
+                      <a className="ts-tree-empty-demo" href="https://demo.webspeak3.de" target="_blank" rel="noreferrer">
+                        {t("tree.tryDemo")}
+                      </a>
+                    )}
+                  </>
+                )}
+              </div>
             )}
           </div>
 
