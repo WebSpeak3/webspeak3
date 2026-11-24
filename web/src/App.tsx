@@ -236,6 +236,7 @@ import {
 } from "./ConnectionTabs";
 import { BARE_URL_REGEX, renderBbcode, wrapUrls } from "./lib/bbcode";
 import { parseChannelName, spacerDisplayName } from "./lib/spacer";
+import { channelsInTreeOrder } from "./lib/channelOrder";
 import akimoPhoto from "./assets/akimo.jpg";
 import {
   applyParkedGatewayEvent,
@@ -4452,7 +4453,7 @@ function MoveClientDialog({
 }) {
   const t = useT();
   const backdrop = useBackdropDismiss(onClose);
-  const movable = [...channels].sort((a, b) => a.order - b.order);
+  const movable = channelsInTreeOrder(channels);
 
   return (
     <div className="ts-dialog-backdrop" {...backdrop}>
@@ -4470,7 +4471,7 @@ function MoveClientDialog({
             <div className="ts-connection-info-loading">{t("moveClient.empty")}</div>
           ) : (
             <ul className="ts-group-assign-list">
-              {movable.map((ch) => {
+              {movable.map(({ channel: ch, depth }) => {
                 const current = ch.id === currentChannelId;
                 const spacer = spacerDisplayName(ch.name, ch.parent === 0);
                 const label = spacer.isSpacer
@@ -4482,6 +4483,7 @@ function MoveClientDialog({
                       className={`ts-menu-item${current ? " ts-group-assign-current" : ""}`}
                       disabled={current || spacer.isSpacer}
                       onClick={() => onSelect(ch.id)}
+                      style={depth > 0 ? { paddingLeft: `${depth * 1.25}em` } : undefined}
                     >
                       <span className="ts-menu-item-icon">
                         {current ? "✔️" : spacer.isSpacer ? "➖" : "📁"}
@@ -5125,8 +5127,8 @@ function PermissionsEditorDialog({
               ))}
             {(scope === "channel" || scope === "channelclient") && (
               <ul className="ts-perms-editor-list">
-                {channels.map((c) => (
-                  <li key={c.id}>
+                {channelsInTreeOrder(channels).map(({ channel: c, depth }) => (
+                  <li key={c.id} style={depth > 0 ? { paddingLeft: `${depth * 1.25}em` } : undefined}>
                     <button
                       className={`ts-link-button${channelId === c.id ? " ts-perms-editor-selected" : ""}`}
                       onClick={() => {
@@ -12727,7 +12729,8 @@ function AppInner() {
         reason: banReason,
       })
     );
-    logClient("info", "Moderation", `Banned ${banTarget.name}`);
+    // Only a request: the server may still refuse it (an error event follows then).
+    logClient("info", "Moderation", `Ban requested for ${banTarget.name}`);
     setBanTarget(null);
     setBanReason("");
     setBanSeconds("0");
@@ -13503,8 +13506,12 @@ function AppInner() {
             {whisperMenuOpen && (
               <div className="ts-menu ts-menu-away" ref={focusFirstItem} onKeyDown={handleMenuKeyDown}>
                 <div className="ts-context-menu-title">{t("whisper.channels")}</div>
-                {channels.map((ch) => (
-                  <label key={ch.id} className="ts-menu-item">
+                {channelsInTreeOrder(channels).map(({ channel: ch, depth }) => (
+                  <label
+                    key={ch.id}
+                    className="ts-menu-item"
+                    style={depth > 0 ? { paddingLeft: `${depth * 1.25}em` } : undefined}
+                  >
                     <input
                       type="checkbox"
                       checked={whisperChannelIds.has(ch.id)}
