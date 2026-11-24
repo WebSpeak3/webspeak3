@@ -902,6 +902,29 @@ async fn main() {
 	}
 }
 
+/// Stable per-identity HWID in the TeamSpeak shape (`<32 hex>,<32 hex>`),
+/// derived from the identity's UID hash so it survives reconnects.
+fn hardware_id_for(uid: &[u8]) -> String {
+	let hex = |bytes: &[u8]| bytes.iter().map(|b| format!("{b:02x}")).collect::<String>();
+	let mut padded = uid.to_vec();
+	padded.resize(20, 0);
+	format!("{},{}", hex(&padded[..16]), hex(&padded[4..20]))
+}
+
+/// Text for a `banclient` the server refused. Permission ids differ between
+/// TeamSpeak and TeaSpeak, so the usual causes are named instead of the id.
+fn ban_failure_message(e: &tsclientlib::CommandError) -> String {
+	match e.missing_permission {
+		Some(perm) => format!(
+			"Ban failed: missing permission (id {}). Usual causes: a permanent ban (duration 0) \
+			 without unlimited i_client_ban_max_bantime, a duration above it, too little \
+			 i_client_ban_power, or the target has b_client_ignore_bans.",
+			perm.0
+		),
+		None => format!("Ban failed: {e}"),
+	}
+}
+
 /// VoySpeak (formerly GreenTeaSpeak) servers report versions like `2.5.1 [Build: …]`.
 /// Classic TeaSpeak reports `TeaSpeak 1.4.21-beta [Build: …]` — not a GTS host.
 /// Classic TeamSpeak 3 reports `3.13.8 [Build: …]` — must not use GTS labels.
@@ -1015,7 +1038,13 @@ async fn run(args: Args) -> Result<()> {
 		.and_then(|s| serde_json::from_str::<Identity>(s).ok().or_else(|| Identity::new_from_str(s).ok()))
 		.unwrap_or_else(Identity::create);
 	let identity_str = serde_json::to_string(&identity).unwrap();
-	let mut con_config = Connection::build(args.address).name(args.nickname).identity(identity);
+	// Without this every web user sends tsclientlib's built-in HWID, so a
+	// hardware-id ban on one web user would lock out all of them.
+	let hardware_id = hardware_id_for(&identity.key().to_pub().get_uid_no_base64());
+	let mut con_config = Connection::build(args.address)
+		.name(args.nickname)
+		.hardware_id(hardware_id)
+		.identity(identity);
 	let server_type = match args.server_type.as_str() {
 		"teaspeak" => ServerType::Teaspeak,
 		"teamspeak" => ServerType::Teamspeak,
@@ -2777,6 +2806,14 @@ async fn run(args: Args) -> Result<()> {
 								} else {
 									emit(&Event::Error { message: format!("{label} failed: {e}") });
 								}
+							} else if label == "Ban client" {
+								// A rejected ban must be visible: the UI only knows it sent one.
+								emit(&Event::Error { message: ban_failure_message(&e) });
+								if e.missing_permission.is_some() {
+									emit(&Event::ServerLog {
+										entry: ServerLogEntry::PermissionError { action: label },
+									});
+								}
 							} else if e.missing_permission.is_some() {
 								emit(&Event::ServerLog {
 									entry: ServerLogEntry::PermissionError { action: label },
@@ -3309,6 +3346,15 @@ mod tests {
 			serde_json::to_string(&entry).unwrap(),
 			r#"{"kind":"clientChannelSwitch","client":"a","fromChannel":"b","toChannel":"c"}"#
 		);
+	}
+
+	#[test]
+	fn hardware_id_is_stable_and_per_identity() {
+		let a = hardware_id_for(&[1u8; 20]);
+		assert_eq!(a, hardware_id_for(&[1u8; 20]));
+		assert_ne!(a, hardware_id_for(&[2u8; 20]));
+		let (left, right) = a.split_once(',').unwrap();
+		assert_eq!((left.len(), right.len()), (32, 32));
 	}
 
 	#[test]
