@@ -75,9 +75,10 @@ interface StoreTheme {
 
 // Undo what a plain pattern check would miss: comments splitting a keyword
 // (u/**/rl), CSS escapes (\75 rl( is url(), and case.
-function normalizeCss(css: string): string {
-  return css
-    .replace(/\/\*[\s\S]*?\*\//g, "")
+// Comment stripping isn't string-aware ("/*" inside content:"..."), so the
+// checks run on both variants: with and without comments removed.
+function normalizeCss(css: string, stripComments: boolean): string {
+  return (stripComments ? css.replace(/\/\*[\s\S]*?\*\//g, "") : css)
     .replace(/\\([0-9a-f]{1,6})\s?/gi, (_, hex: string) => {
       const cp = parseInt(hex, 16);
       return cp > 0 && cp <= 0x10ffff ? String.fromCodePoint(cp) : "\ufffd";
@@ -94,7 +95,7 @@ const FORBIDDEN_CSS = [
   /@import/,
   /@font-face/,
   /@namespace/,
-  /(?:^|[^a-z-])(?:image-set|image|cross-fade|element|src|expression)\s*\(/,
+  /(?:^|[^a-z])(?:-[a-z]+-)?(?:image-set|image|cross-fade|element|src|expression)\s*\(/,
   /-moz-binding/,
   /behavior\s*:/,
   /javascript:/,
@@ -102,7 +103,10 @@ const FORBIDDEN_CSS = [
 ];
 
 export function isSafeThemeCss(css: string): boolean {
-  const normalized = normalizeCss(css);
+  return isSafeNormalized(normalizeCss(css, true)) && isSafeNormalized(normalizeCss(css, false));
+}
+
+function isSafeNormalized(normalized: string): boolean {
   if (FORBIDDEN_CSS.some((re) => re.test(normalized))) return false;
   for (const match of normalized.matchAll(/url\s*\(\s*(["']?)\s*([^"')\s]*)/g)) {
     if (!/^data:image\/(?:png|jpeg|gif|webp|svg\+xml)[;,]/.test(match[2])) return false;
@@ -372,8 +376,8 @@ async function handleStoreSubmit(req: IncomingMessage, res: ServerResponse) {
 
   const themes = await loadStoreThemes();
   // Re-uploading an installed store theme unchanged would just duplicate it.
-  const cssKey = normalizeCss(css).replace(/\s+/g, "");
-  if (themes.some((t) => normalizeCss(t.css).replace(/\s+/g, "") === cssKey)) {
+  const cssKey = normalizeCss(css, true).replace(/\s+/g, "");
+  if (themes.some((t) => normalizeCss(t.css, true).replace(/\s+/g, "") === cssKey)) {
     res.writeHead(409, { "Content-Type": "application/json" });
     res.end(JSON.stringify({ error: "duplicate" }));
     return;
