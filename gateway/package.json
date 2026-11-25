@@ -10,6 +10,7 @@
     "start": "node dist/index.js"
   },
   "dependencies": {
+    "qrcode-generator": "^1.4.4",
     "ws": "^8.18.0"
   },
   "devDependencies": {

@@ -33,12 +33,17 @@ async function instanceId(): Promise<string> {
   return id;
 }
 
-async function ping(id: string) {
+let id: Promise<string> | undefined;
+
+async function ping() {
+  // Checked on every ping: the admin panel can switch it on/off live.
+  if (process.env.TELEMETRY === "0") return;
+  id ??= instanceId();
   try {
     await fetch(TELEMETRY_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id, version: VERSION }),
+      body: JSON.stringify({ id: await id, version: VERSION }),
       signal: AbortSignal.timeout(10_000),
     });
   } catch {
@@ -50,8 +55,6 @@ if (process.env.TELEMETRY !== "0") {
   console.log(
     `Sending an anonymous usage ping (random instance id + version ${VERSION}) to ${new URL(TELEMETRY_URL).host} at startup and once a day. Disable with TELEMETRY=0.`
   );
-  void instanceId().then((id) => {
-    void ping(id);
-    setInterval(() => void ping(id), DAY_MS).unref();
-  });
 }
+void ping();
+setInterval(() => void ping(), DAY_MS).unref();

@@ -6,9 +6,9 @@ import type { IncomingMessage } from "node:http";
 // - "cloudflare": CF-Connecting-IP, which Cloudflare always sets itself.
 // - "1": the last X-Forwarded-For entry, the one our own proxy appended;
 //   anything before it came from the client and can be made up.
-const TRUST_PROXY = process.env.TRUST_PROXY;
-
 export function clientIp(req: IncomingMessage): string {
+  // Read per request: the admin panel can change it live.
+  const TRUST_PROXY = process.env.TRUST_PROXY;
   if (TRUST_PROXY === "cloudflare") {
     const cf = req.headers["cf-connecting-ip"];
     if (typeof cf === "string" && cf.trim()) return cf.trim();
@@ -22,7 +22,7 @@ export function clientIp(req: IncomingMessage): string {
 /** Sliding-window "N per window per key" limiter. Expired keys are swept
  *  periodically so the map can't grow without bound under a stream of
  *  one-shot IPs. */
-export function createRateLimiter(limit: number, windowMs: number): (key: string) => boolean {
+export function createRateLimiter(limit: number | (() => number), windowMs: number): (key: string) => boolean {
   const hits = new Map<string, number[]>();
   setInterval(() => {
     const now = Date.now();
@@ -35,6 +35,6 @@ export function createRateLimiter(limit: number, windowMs: number): (key: string
     const recent = (hits.get(key) ?? []).filter((t) => now - t < windowMs);
     recent.push(now);
     hits.set(key, recent);
-    return recent.length > limit;
+    return recent.length > (typeof limit === "function" ? limit() : limit);
   };
 }
