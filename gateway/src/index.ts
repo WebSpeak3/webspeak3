@@ -1,3 +1,4 @@
+import "./config.js"; // first: applies admin-panel overrides to process.env
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { createServer as createSecureServer } from "node:https";
 import { readFileSync } from "node:fs";
@@ -9,17 +10,18 @@ import { WebSocketServer, type WebSocket } from "ws";
 import { Ts3Connection, type ServerType, type Ts3ConnectOptions } from "./ts3/connection.js";
 import { handleStore } from "./store.js";
 import { handleNewsConfig } from "./news.js";
+import { handleAdmin, setConnectionCounter } from "./admin.js";
 import { logFeedback, logConnectionEvent } from "./activity-log.js";
 import { clientIp, createRateLimiter } from "./net.js";
-import { TURNSTILE_ENABLED, TURNSTILE_SITE_KEY, isValidPass, issuePass, verifyToken } from "./turnstile.js";
+import { turnstileEnabled, turnstileSiteKey, isValidPass, issuePass, verifyToken } from "./turnstile.js";
 import "./telemetry.js";
 
 // TeamSpeak 2 support is experimental and opt-in (ENABLE_TS2=1).
-const TS2_ENABLED = process.env.ENABLE_TS2 === "1";
-const SERVER_TYPES = new Set<ServerType>(["teamspeak", "teaspeak", "auto", ...(TS2_ENABLED ? (["ts2"] as const) : [])]);
+const ts2Enabled = () => process.env.ENABLE_TS2 === "1";
+const serverTypes = () => new Set<ServerType>(["teamspeak", "teaspeak", "auto", ...(ts2Enabled() ? (["ts2"] as const) : [])]);
 
 function parseServerType(value: unknown): ServerType | undefined {
-  return typeof value === "string" && SERVER_TYPES.has(value as ServerType)
+  return typeof value === "string" && serverTypes().has(value as ServerType)
     ? (value as ServerType)
     : undefined;
 }
@@ -34,10 +36,13 @@ function parsePrivilegeKey(msg: { privilegeKey?: unknown; token?: unknown }): st
 // Self-hosting admins may want to lock their instance to specific server(s)
 // instead of leaving it as a general-purpose "connect anywhere" client.
 // Unset (the default) means unrestricted, unchanged from before this existed.
-const ALLOWED_SERVERS = (process.env.ALLOWED_SERVERS ?? "")
-  .split(",")
-  .map((s) => s.trim().toLowerCase())
-  .filter(Boolean);
+// Live settings below are functions, not constants: the admin panel
+// (config.ts/admin.ts) can change process.env while the gateway runs.
+const allowedServers = () =>
+  (process.env.ALLOWED_SERVERS ?? "")
+    .split(",")
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean);
 
 // Strips a trailing ":port" so "ts.example.com:9987" and "ts.example.com"
 // both match a plain "ts.example.com" allowlist entry. IPv6 literals come
@@ -53,6 +58,7 @@ function stripPort(host: string): string {
 }
 
 function isServerAllowed(host: unknown): boolean {
+  const ALLOWED_SERVERS = allowedServers();
   if (ALLOWED_SERVERS.length === 0) return true;
   if (typeof host !== "string") return false;
   const target = stripPort(host).trim().toLowerCase();
@@ -88,24 +94,25 @@ function isValidNickname(nickname: unknown): nickname is string {
 // Unset keeps the old "any origin" behavior for self-hosters; entries are
 // full origins ("https://client.example.com"). Non-browser clients send no
 // Origin header at all - they could fake one anyway, so they aren't blocked.
-const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS ?? "")
-  .split(",")
-  .map((s) => s.trim().replace(/\/+$/, "").toLowerCase())
-  .filter(Boolean);
+const allowedOrigins = () =>
+  (process.env.ALLOWED_ORIGINS ?? "")
+    .split(",")
+    .map((s) => s.trim().replace(/\/+$/, "").toLowerCase())
+    .filter(Boolean);
 
 // Each /ws socket can spawn a connector process holding a live TeamSpeak
 // session, so both need a ceiling. 0 disables the respective limit.
-const MAX_CONNECTIONS_PER_IP = Number(process.env.MAX_CONNECTIONS_PER_IP ?? 10);
+const maxConnectionsPerIp = () => Number(process.env.MAX_CONNECTIONS_PER_IP ?? 10);
 // Measured 2026-10-25: ~8-9 % of a core per client listening to constant audio
 // (connector + node + cloudflared), ~10-15 MB RAM. 60 suits a 2-core VPS.
-const MAX_CONNECTIONS = Number(process.env.MAX_CONNECTIONS ?? 60);
+const maxConnections = () => Number(process.env.MAX_CONNECTIONS ?? 60);
 const connectionsPerIp = new Map<string, number>();
 // Every "connect" spawns a fresh connector, and a socket can send any number
 // of them - without this, 10 sockets were enough to join-flood a TS server
 // through this gateway at several joins per second. Real clients (reconnect
 // backoff, restoring a handful of tabs) stay far below it.
-const CONNECT_RATE_LIMIT = Number(process.env.CONNECT_RATE_LIMIT ?? 30);
-const isConnectRateLimited = createRateLimiter(CONNECT_RATE_LIMIT, 60_000);
+const connectRateLimit = () => Number(process.env.CONNECT_RATE_LIMIT ?? 30);
+const isConnectRateLimited = createRateLimiter(connectRateLimit, 60_000);
 
 // Largest single WS message. Uploads now arrive in small "uploadFileChunk"
 // pieces; this size only stays for browsers still running a client from
@@ -127,15 +134,16 @@ const WEB_DIST = process.env.WEB_DIST ?? path.resolve(__dirname, "../../web/dist
 const SERVE_STATIC = process.env.WEB_STATIC !== "0";
 
 // Sent to every browser in the "hello" message on socket open; see there.
-const GATEWAY_FEATURES = ["clientVolume", "keepalive", "chunkedUpload", "whisperPolicy", "transferLimit", ...(TS2_ENABLED ? ["ts2"] : [])];
+const gatewayFeatures = () => ["clientVolume", "keepalive", "chunkedUpload", "whisperPolicy", "transferLimit", ...(ts2Enabled() ? ["ts2"] : [])];
 
 // Optional TURN relay for screen streams, also handed out in "hello". With
 // TURN_SECRET (coturn's use-auth-secret) every socket gets its own credential,
 // valid for a day; TURN_USERNAME/TURN_CREDENTIAL are static and so readable by
 // every visitor. ponytail: a socket open longer than a day hands an expired
 // credential to a stream started after that; reconnecting fixes it.
-const TURN_URLS = (process.env.TURN_URLS ?? "").split(",").map((u) => u.trim()).filter(Boolean);
+
 function turnServers() {
+  const TURN_URLS = (process.env.TURN_URLS ?? "").split(",").map((u) => u.trim()).filter(Boolean);
   if (!TURN_URLS.length) return undefined;
   const secret = process.env.TURN_SECRET;
   if (!secret) {
@@ -152,11 +160,14 @@ function turnServers() {
 // The allowlist goes along so the client can offer it as a dropdown (or a
 // locked field for a single entry) instead of a free-text address; not with
 // wildcards, which can't be listed, nor with SERVER_PICKER=0.
-const SERVER_PICKER =
-  process.env.SERVER_PICKER !== "0" && !ALLOWED_SERVERS.some((e) => e.startsWith("*."))
-    ? ALLOWED_SERVERS.join(",")
-    : undefined;
-const RUNTIME_CONFIG_META = Object.entries({
+// Built per request, since the admin panel can change these at runtime.
+const runtimeConfigMeta = () => {
+  const ALLOWED_SERVERS = allowedServers();
+  const SERVER_PICKER =
+    process.env.SERVER_PICKER !== "0" && !ALLOWED_SERVERS.some((e) => e.startsWith("*."))
+      ? ALLOWED_SERVERS.join(",")
+      : undefined;
+  return Object.entries({
   "webspeak3-default-server": process.env.DEFAULT_SERVER,
   "webspeak3-default-channel": process.env.DEFAULT_CHANNEL,
   "webspeak3-allowed-servers": SERVER_PICKER,
@@ -167,6 +178,7 @@ const RUNTIME_CONFIG_META = Object.entries({
     value ? [`<meta name="${name}" content="${value.replace(/[&"<>]/g, (c) => `&#${c.charCodeAt(0)};`)}">`] : [],
   )
   .join("");
+};
 
 const MIME_TYPES: Record<string, string> = {
   ".html": "text/html",
@@ -190,16 +202,15 @@ const MIME_TYPES: Record<string, string> = {
 // (see IS_OWN_HOSTED_INSTANCE in web/src/App.tsx), but this endpoint
 // enforces its own opt-in independently since it's reachable directly over
 // HTTP by anyone who finds the gateway's address, not just from that UI.
-const FEEDBACK_ENABLED = process.env.FEEDBACK_ENABLED === "1";
+
 // The web app is commonly hosted on a different origin than the gateway
 // (see mem:deployment / GATEWAY_URL in web/), so this needs its own CORS
 // allowance; default "*" since the endpoint is opt-in, rate-limited, and
 // only ever accepts a feedback submission, nothing that reads data back.
-const FEEDBACK_ALLOWED_ORIGIN = process.env.FEEDBACK_ALLOWED_ORIGIN ?? "*";
+const feedbackAllowedOrigin = () => process.env.FEEDBACK_ALLOWED_ORIGIN || "*";
 // A token with "Issues: write" access on the target repo. Without it,
 // feedback is still accepted and logged, just never turned into an issue.
-const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
-const GITHUB_REPO = process.env.GITHUB_REPO ?? "WebSpeak3/webspeak3";
+const githubRepo = () => process.env.GITHUB_REPO || "WebSpeak3/webspeak3";
 const FEEDBACK_CATEGORIES = new Set(["bug", "idea", "report", "other"]);
 const FEEDBACK_MESSAGE_MAX_LENGTH = 4000;
 
@@ -210,18 +221,18 @@ const FEEDBACK_MESSAGE_MAX_LENGTH = 4000;
 // tab (reuses the same {type:"notice"} message the SIGTERM handler already
 // sends, which the frontend renders even without a messageKey). Unset
 // BROADCAST_TOKEN and the endpoint 404s, same as feedback when disabled.
-const BROADCAST_TOKEN = process.env.BROADCAST_TOKEN;
 const BROADCAST_MESSAGE_MAX_LENGTH = 500;
 
 function isValidBroadcastToken(provided: string): boolean {
-  if (!BROADCAST_TOKEN) return false;
+  const token = process.env.BROADCAST_TOKEN;
+  if (!token) return false;
   const a = Buffer.from(provided);
-  const b = Buffer.from(BROADCAST_TOKEN);
+  const b = Buffer.from(token);
   return a.length === b.length && timingSafeEqual(a, b);
 }
 
 async function handleBroadcast(req: IncomingMessage, res: ServerResponse) {
-  if (!BROADCAST_TOKEN) {
+  if (!process.env.BROADCAST_TOKEN) {
     res.writeHead(404, { "Content-Type": "application/json" });
     res.end(JSON.stringify({ error: "not_found" }));
     return;
@@ -300,7 +311,8 @@ function neutralizeMentions(text: string): string {
 // The contact e-mail is deliberately *not* part of this: it's only kept in
 // the private feedback log (logFeedback), never in the public issue.
 async function createGithubIssue(payload: { category: string; message: string }): Promise<string | undefined> {
-  if (!GITHUB_TOKEN) return undefined;
+  const githubToken = process.env.GITHUB_TOKEN;
+  if (!githubToken) return undefined;
   const title = neutralizeMentions(
     `[Feedback/${payload.category}] ${payload.message.replace(/\s+/g, " ").trim().slice(0, 72)}`,
   );
@@ -316,10 +328,10 @@ async function createGithubIssue(payload: { category: string; message: string })
     "_Submitted via the in-client feedback form._",
   ].join("\n");
 
-  const res = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/issues`, {
+  const res = await fetch(`https://api.github.com/repos/${githubRepo()}/issues`, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${GITHUB_TOKEN}`,
+      Authorization: `Bearer ${githubToken}`,
       Accept: "application/vnd.github+json",
       "Content-Type": "application/json",
       "User-Agent": "webspeak3-gateway",
@@ -337,7 +349,7 @@ async function createGithubIssue(payload: { category: string; message: string })
 }
 
 async function handleFeedback(req: IncomingMessage, res: ServerResponse) {
-  res.setHeader("Access-Control-Allow-Origin", FEEDBACK_ALLOWED_ORIGIN);
+  res.setHeader("Access-Control-Allow-Origin", feedbackAllowedOrigin());
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
@@ -346,7 +358,7 @@ async function handleFeedback(req: IncomingMessage, res: ServerResponse) {
     res.end();
     return;
   }
-  if (!FEEDBACK_ENABLED) {
+  if (process.env.FEEDBACK_ENABLED !== "1") {
     res.writeHead(404, { "Content-Type": "application/json" });
     res.end(JSON.stringify({ error: "not_found" }));
     return;
@@ -491,11 +503,15 @@ const requestHandler = (req: IncomingMessage, res: ServerResponse) => {
         // Same list as the "hello" message, readable before any connect
         // (the connect dialog offers TeamSpeak 2 only when it is enabled).
         res.writeHead(200, { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*", "Cache-Control": "public, max-age=300" });
-        res.end(JSON.stringify({ features: GATEWAY_FEATURES, ...(TURNSTILE_ENABLED ? { turnstileSiteKey: TURNSTILE_SITE_KEY } : {}) }));
+        res.end(JSON.stringify({ features: gatewayFeatures(), ...(turnstileEnabled() ? { turnstileSiteKey: turnstileSiteKey() } : {}) }));
         return;
       }
       if (requestUrl.pathname === "/api/news") {
         handleNewsConfig(res);
+        return;
+      }
+      if (requestUrl.pathname === "/admin" || requestUrl.pathname.startsWith("/admin/")) {
+        await handleAdmin(req, res, requestUrl.pathname);
         return;
       }
       if (requestUrl.pathname === "/api/broadcast") {
@@ -551,9 +567,10 @@ const requestHandler = (req: IncomingMessage, res: ServerResponse) => {
         filePath = path.join(WEB_DIST, "index.html");
         body = await readFile(filePath);
       }
-      if (RUNTIME_CONFIG_META && filePath === path.join(WEB_DIST, "index.html")) {
+      const meta = filePath === path.join(WEB_DIST, "index.html") ? runtimeConfigMeta() : "";
+      if (meta) {
         // Function replacer: a string one would expand "$&" etc. in the values.
-        body = Buffer.from(body.toString("utf8").replace("</head>", () => `${RUNTIME_CONFIG_META}</head>`));
+        body = Buffer.from(body.toString("utf8").replace("</head>", () => `${meta}</head>`));
       }
       const ext = path.extname(filePath);
       res.writeHead(200, {
@@ -579,10 +596,12 @@ const wss = new WebSocketServer({
   path: "/ws",
   maxPayload: WS_MAX_PAYLOAD,
   verifyClient: ({ origin, req }, done) => {
+    const ALLOWED_ORIGINS = allowedOrigins();
     if (ALLOWED_ORIGINS.length > 0 && origin && !ALLOWED_ORIGINS.includes(origin.toLowerCase())) {
       return done(false, 403, "Origin not allowed");
     }
     const ip = clientIp(req);
+    const MAX_CONNECTIONS_PER_IP = maxConnectionsPerIp();
     if (MAX_CONNECTIONS_PER_IP > 0 && (connectionsPerIp.get(ip) ?? 0) >= MAX_CONNECTIONS_PER_IP) {
       console.warn(`[ratelimit] too many open connections from one IP (limit ${MAX_CONNECTIONS_PER_IP})`);
       return done(false, 429, "Too many connections");
@@ -590,6 +609,7 @@ const wss = new WebSocketServer({
     done(true);
   },
 });
+setConnectionCounter(() => wss.clients.size);
 
 // Heartbeat: a browser tab that loses its network mid-session (mobile
 // handover, Wi-Fi drop, backgrounded/frozen tab) often never sends a proper
@@ -690,7 +710,7 @@ wss.on("connection", (socket: WebSocket, req: IncomingMessage) => {
   let connection: Ts3Connection | undefined;
 
   // Full: accept and say so, since a browser can't read why an upgrade was refused.
-  if (MAX_CONNECTIONS > 0 && wss.clients.size > MAX_CONNECTIONS) {
+  if (maxConnections() > 0 && wss.clients.size > maxConnections()) {
     socket.send(JSON.stringify({ type: "error", code: "gateway_full", message: "This gateway is full right now. Please try again in a few minutes." }));
     socket.close(1013, "Gateway is full");
     return;
@@ -703,7 +723,7 @@ wss.on("connection", (socket: WebSocket, req: IncomingMessage) => {
   // pulled, so the browser must not assume a feature exists just because it
   // knows about it. A gateway without "hello" (before v0.15) supports the
   // v0.14 feature set, streaming included; anything newer gets a name here.
-  socket.send(JSON.stringify({ type: "hello", features: GATEWAY_FEATURES, iceServers: turnServers() }));
+  socket.send(JSON.stringify({ type: "hello", features: gatewayFeatures(), iceServers: turnServers() }));
 
   heartbeats.set(socket, { isAlive: true });
   socket.on("pong", () => {
@@ -749,14 +769,14 @@ wss.on("connection", (socket: WebSocket, req: IncomingMessage) => {
           );
           break;
         }
-        if (CONNECT_RATE_LIMIT > 0 && isConnectRateLimited(ip)) {
+        if (connectRateLimit() > 0 && isConnectRateLimited(ip)) {
           console.warn(`[ratelimit] too many connects from one IP, target host=${msg.host}`);
           socket.send(
             JSON.stringify({ type: "error", message: "Too many connection attempts. Please wait a minute." }),
           );
           break;
         }
-        if (TURNSTILE_ENABLED && !isValidPass(msg.turnstilePass, ip)) {
+        if (turnstileEnabled() && !isValidPass(msg.turnstilePass, ip)) {
           // No (valid) pass yet: ask the browser to solve the check, it
           // resends this connect with the token.
           if (msg.turnstileToken === undefined) {

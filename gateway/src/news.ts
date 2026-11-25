@@ -24,7 +24,6 @@ type NewsItem =
 type TextItem = Extract<NewsItem, { kind: "text" }>;
 
 const NEWS_DATA_FILE = process.env.NEWS_DATA_FILE;
-const GITHUB_REPO = process.env.GITHUB_REPO ?? "WebSpeak3/webspeak3";
 const MAX_ITEMS = 20;
 const MAX_TEXT = 300;
 const AUTO_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
@@ -57,7 +56,7 @@ async function latestRelease(): Promise<NewsItem | null> {
   if (Date.now() - release.fetchedAt < 60 * 60 * 1000) return release.item;
   release.fetchedAt = Date.now();
   try {
-    const res = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/releases?per_page=1`, {
+    const res = await fetch(`https://api.github.com/repos/${process.env.GITHUB_REPO || "WebSpeak3/webspeak3"}/releases?per_page=1`, {
       headers: { Accept: "application/vnd.github+json", "User-Agent": "webspeak3-store" },
     });
     if (!res.ok) return release.item;
@@ -135,16 +134,22 @@ export async function handleNewsFeed(req: IncomingMessage, res: ServerResponse, 
   json(res, 400, { error: "bad_request" });
 }
 
-const NEWS_TICKER = process.env.NEWS_TICKER !== "0";
-const NEWS_TICKER_CENTRAL = process.env.NEWS_TICKER_CENTRAL !== "0";
-const LOCAL_ITEMS: NewsItem[] = (process.env.NEWS_TICKER_MESSAGES ?? "")
-  .split("|")
-  .map((text) => text.trim().slice(0, MAX_TEXT))
-  .filter(Boolean)
-  .map((text, i) => ({ id: `local-${i}-${text}`, kind: "text", text, at: "" }));
+// Read per request: the admin panel (config.ts) can change these at runtime.
+const localItems = (): NewsItem[] =>
+  (process.env.NEWS_TICKER_MESSAGES ?? "")
+    .split("|")
+    .map((text) => text.trim().slice(0, MAX_TEXT))
+    .filter(Boolean)
+    .map((text, i) => ({ id: `local-${i}-${text}`, kind: "text", text, at: "" }));
 
 export function handleNewsConfig(res: ServerResponse) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Cache-Control", "public, max-age=300");
-  json(res, 200, NEWS_TICKER ? { enabled: true, central: NEWS_TICKER_CENTRAL, items: LOCAL_ITEMS } : { enabled: false });
+  json(
+    res,
+    200,
+    process.env.NEWS_TICKER !== "0"
+      ? { enabled: true, central: process.env.NEWS_TICKER_CENTRAL !== "0", items: localItems() }
+      : { enabled: false },
+  );
 }

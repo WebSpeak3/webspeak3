@@ -5,16 +5,17 @@
 // most once in that window.
 import { createHmac, timingSafeEqual } from "node:crypto";
 
-export const TURNSTILE_SITE_KEY = process.env.TURNSTILE_SITE_KEY ?? "";
-const SECRET = process.env.TURNSTILE_SECRET ?? "";
-export const TURNSTILE_ENABLED = TURNSTILE_SITE_KEY !== "" && SECRET !== "";
+// Read at use time: the admin panel (config.ts) can change both at runtime.
+export const turnstileSiteKey = () => process.env.TURNSTILE_SITE_KEY ?? "";
+const secret = () => process.env.TURNSTILE_SECRET ?? "";
+export const turnstileEnabled = () => turnstileSiteKey() !== "" && secret() !== "";
 
 const PASS_TTL_MS = 12 * 60 * 60 * 1000;
 // Derived from the secret, so passes survive a gateway restart.
-const PASS_KEY = createHmac("sha256", SECRET).update("webspeak3-turnstile-pass").digest();
+const passKey = () => createHmac("sha256", secret()).update("webspeak3-turnstile-pass").digest();
 
 const sign = (ip: string, expires: number) =>
-  createHmac("sha256", PASS_KEY).update(`${ip}|${expires}`).digest("base64url");
+  createHmac("sha256", passKey()).update(`${ip}|${expires}`).digest("base64url");
 
 export function issuePass(ip: string): string {
   const expires = Date.now() + PASS_TTL_MS;
@@ -36,7 +37,7 @@ export async function verifyToken(token: unknown, ip: string): Promise<boolean> 
   try {
     const res = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
       method: "POST",
-      body: new URLSearchParams({ secret: SECRET, response: token, remoteip: ip }),
+      body: new URLSearchParams({ secret: secret(), response: token, remoteip: ip }),
       signal: AbortSignal.timeout(10_000),
     });
     const data = (await res.json()) as { success?: boolean; "error-codes"?: string[] };

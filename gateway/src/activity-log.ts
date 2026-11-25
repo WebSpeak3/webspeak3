@@ -51,7 +51,6 @@ export async function logFeedback(entry: FeedbackEntry): Promise<void> {
 // and other instances shouldn't get connection logging just because it's in
 // the codebase. Set LOG_CONNECTIONS=1 in the .env of the instance you want it
 // on. Logs only host/server-name/timestamp — no nickname, no IP.
-export const LOG_CONNECTIONS = process.env.LOG_CONNECTIONS === "1";
 
 export interface ConnectionEvent {
   type: "connected" | "disconnected";
@@ -60,7 +59,7 @@ export interface ConnectionEvent {
 }
 
 export function logConnectionEvent(event: ConnectionEvent): void {
-  if (!LOG_CONNECTIONS) return;
+  if (process.env.LOG_CONNECTIONS !== "1") return;
   if (event.type === "connected") {
     console.log(`[connections] connected host=${event.host} server=${event.server} at=${new Date().toISOString()}`);
   } else {

@@ -7,9 +7,11 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc -p tsconfig.json",
-    "start": "node dist/index.js"
+    "start": "node dist/index.js",
+    "test": "tsc -p tsconfig.json && node --test \"test/*.test.mjs\""
   },
   "dependencies": {
+    "qrcode-generator": "^1.4.4",
     "ws": "^8.18.0"
   },
   "devDependencies": {

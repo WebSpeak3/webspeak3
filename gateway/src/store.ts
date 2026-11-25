@@ -16,8 +16,7 @@ import { timingSafeEqual, randomUUID } from "node:crypto";
 import path from "node:path";
 import { clientIp, createRateLimiter } from "./net.js";
 
-const STORE_ENABLED = process.env.STORE_ENABLED === "1";
-const STORE_ALLOWED_ORIGIN = process.env.STORE_ALLOWED_ORIGIN ?? "*";
+const storeAllowedOrigin = () => process.env.STORE_ALLOWED_ORIGIN || "*";
 // Plain JSON file (whole-array read-modify-write, not JSON-lines like
 // feedback.log in index.ts): the store needs to list and look up by id, and
 // the expected volume (community theme submissions) is small enough that
@@ -42,18 +41,18 @@ const STORE_BASE_THEMES = new Set(["standard", "nova", "pulse", "ide"]);
 // STORE_ADMIN_TOKEN may publish under - stops anyone else from impersonating
 // the maintainer in the author field. Everyone else's name is first-come,
 // unenforced, same as any other free-text field here.
-const STORE_RESERVED_AUTHORS = new Set(
+const storeReservedAuthors = () => new Set(
   (process.env.STORE_RESERVED_AUTHORS ?? "Möpchi,Moepchi")
     .split(",")
     .map((s) => s.trim().toLowerCase())
     .filter(Boolean)
 );
-const STORE_ADMIN_TOKEN = process.env.STORE_ADMIN_TOKEN;
 
 function isValidStoreAdminToken(provided: string): boolean {
-  if (!STORE_ADMIN_TOKEN) return false;
+  const token = process.env.STORE_ADMIN_TOKEN;
+  if (!token) return false;
   const a = Buffer.from(provided);
-  const b = Buffer.from(STORE_ADMIN_TOKEN);
+  const b = Buffer.from(token);
   return a.length === b.length && timingSafeEqual(a, b);
 }
 
@@ -165,7 +164,7 @@ const isStoreRateLimited = createRateLimiter(STORE_RATE_LIMIT, STORE_RATE_WINDOW
 const storeRatingsSeen = new Set<string>();
 
 function setStoreCors(res: ServerResponse) {
-  res.setHeader("Access-Control-Allow-Origin", STORE_ALLOWED_ORIGIN);
+  res.setHeader("Access-Control-Allow-Origin", storeAllowedOrigin());
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
 }
@@ -346,7 +345,7 @@ async function handleStoreSubmit(req: IncomingMessage, res: ServerResponse) {
   }
 
   const isAdmin = isAdminRequest(req);
-  if (STORE_RESERVED_AUTHORS.has(author.toLowerCase())) {
+  if (storeReservedAuthors().has(author.toLowerCase())) {
     if (!isAdmin) {
       res.writeHead(403, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ error: "author_reserved" }));
@@ -506,7 +505,7 @@ export async function handleStore(req: IncomingMessage, res: ServerResponse, pat
     res.end();
     return;
   }
-  if (!STORE_ENABLED) {
+  if (process.env.STORE_ENABLED !== "1") {
     res.writeHead(404, { "Content-Type": "application/json" });
     res.end(JSON.stringify({ error: "not_found" }));
     return;
