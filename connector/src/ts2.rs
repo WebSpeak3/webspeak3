@@ -31,6 +31,10 @@ const KEEPALIVE_EVERY: Duration = Duration::from_secs(3);
 const RESEND_AFTER: Duration = Duration::from_secs(1);
 const MAX_RESENDS: u16 = 10;
 const SERVER_TIMEOUT: Duration = Duration::from_secs(20);
+// Caps what a (hostile) server can make us buffer: packets ahead of the next
+// expected one, and the size of one reassembled fragmented message.
+const REORDER_WINDOW: u32 = 256;
+const MAX_FRAGMENTS_BYTES: usize = 1 << 20;
 /// Speex narrowband: 20 ms frames of 160 samples at 8 kHz, 5 per voice packet.
 const SPEEX_FRAME: usize = 160;
 const FRAMES_PER_PACKET: usize = 5;
@@ -675,6 +679,10 @@ impl Ts2 {
 		match u16_at(b, 0) {
 			0xbef0 if b.len() >= 24 => {
 				let seq = u32_at(b, 12);
+				// Too far ahead: no ack, so a real server resends it later.
+				if seq >= self.next_in && seq - self.next_in >= REORDER_WINDOW {
+					return Ok(true);
+				}
 				let mut ack = Vec::with_capacity(16);
 				ack.extend_from_slice(&0xbef1u16.to_le_bytes());
 				ack.extend_from_slice(&0u16.to_le_bytes());
@@ -694,6 +702,9 @@ impl Ts2 {
 					if fragment != 0 || !self.fragments.is_empty() {
 						if self.fragments.is_empty() {
 							self.fragment_type = typ;
+						}
+						if self.fragments.len() + p.len() - 24 > MAX_FRAGMENTS_BYTES {
+							bail!("The TeamSpeak 2 server sent an oversized message");
 						}
 						self.fragments.extend_from_slice(&p[24..]);
 						if fragment != 0 {
@@ -921,6 +932,40 @@ which this gateway does not connect to. (Self-hosting admin? Set ALLOW_PRIVATE_T
 #[cfg(test)]
 mod tests {
 	use super::*;
+
+	// A hostile server can't make the connector buffer without bound.
+	#[tokio::test]
+	async fn reorder_and_fragment_buffers_are_capped() {
+		let peer = UdpSocket::bind("127.0.0.1:0").await.unwrap();
+		let sock = UdpSocket::bind("127.0.0.1:0").await.unwrap();
+		sock.connect(peer.local_addr().unwrap()).await.unwrap();
+		let mut ts = Ts2 {
+			sock, session: 0, client_id: 0, conn_counter: 0, seq: 0, outbox: VecDeque::new(), in_flight: None,
+			next_in: 1, early: BTreeMap::new(), fragments: Vec::new(), fragment_type: 0, channels: BTreeMap::new(),
+			players: BTreeMap::new(), lists_done: false, speakers: HashMap::new(), talking: HashSet::new(),
+			encoder: None, voice_counter: 0, voice_conversation: 0, last_audio_in: None, codec_warned: false,
+		};
+		let packet = |seq: u32, fragment: u16, body: usize| {
+			let mut p = vec![0u8; 24 + body];
+			p[0..2].copy_from_slice(&0xbef0u16.to_le_bytes());
+			p[12..16].copy_from_slice(&seq.to_le_bytes());
+			p[18..20].copy_from_slice(&fragment.to_le_bytes());
+			p
+		};
+		for seq in 2..2000 {
+			ts.on_datagram(&packet(seq, 0, 100)).await.unwrap();
+		}
+		assert!(ts.early.len() < REORDER_WINDOW as usize);
+		ts.early.clear();
+		let mut result = Ok(true);
+		for _ in 0..100 {
+			result = ts.on_datagram(&packet(ts.next_in, 1, 60_000)).await;
+			if result.is_err() {
+				break;
+			}
+		}
+		assert!(result.is_err() && ts.fragments.len() <= MAX_FRAGMENTS_BYTES);
+	}
 
 	#[test]
 	fn crc_matches_zlib() {
