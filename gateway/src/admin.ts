@@ -337,9 +337,9 @@ export async function handleAdmin(req: IncomingMessage, res: ServerResponse, pat
 const PAGE = `<!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex">
 <title>WebSpeak3 Admin</title><style>
-:root{color-scheme:light;--bg:#f4f6f8;--card:#fff;--fg:#1b1f24;--muted:#5f6b7a;--line:#dde2e8;--field:#f7f9fb;--accent:#2f6fde;--on-accent:#fff;--bad:#c0392b;--warn:#a86200}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--bg:#131619;--card:#1c2025;--fg:#e6e9ed;--muted:#97a1ad;--line:#2f363e;--field:#15191d;--accent:#6a9cff;--on-accent:#0b1426;--bad:#ff6b5b;--warn:#f0b35a}}
-:root[data-theme="dark"]{color-scheme:dark;--bg:#131619;--card:#1c2025;--fg:#e6e9ed;--muted:#97a1ad;--line:#2f363e;--field:#15191d;--accent:#6a9cff;--on-accent:#0b1426;--bad:#ff6b5b;--warn:#f0b35a}
+:root{color-scheme:light;--bg:#f4f6f8;--card:#fff;--fg:#1b1f24;--muted:#5f6b7a;--line:#dde2e8;--field:#f7f9fb;--accent:#2f6fde;--on-accent:#fff;--bad:#c0392b;--warn:#a86200;--ok:#1e7f43}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--bg:#131619;--card:#1c2025;--fg:#e6e9ed;--muted:#97a1ad;--line:#2f363e;--field:#15191d;--accent:#6a9cff;--on-accent:#0b1426;--bad:#ff6b5b;--warn:#f0b35a;--ok:#5cc98a}}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#131619;--card:#1c2025;--fg:#e6e9ed;--muted:#97a1ad;--line:#2f363e;--field:#15191d;--accent:#6a9cff;--on-accent:#0b1426;--bad:#ff6b5b;--warn:#f0b35a;--ok:#5cc98a}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.45 system-ui,sans-serif}
 main{max-width:1320px;margin:0 auto;padding:20px 16px 0}
 header{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px;margin-bottom:18px}
@@ -375,7 +375,7 @@ button.plain{background:transparent;color:var(--accent);padding:2px 0}
 .inactive input,.inactive select{opacity:.5}button.second{background:transparent;color:var(--accent);border:1px solid var(--accent)}button.second.due{background:var(--warn);border-color:var(--warn);color:var(--on-accent)}.warn{color:var(--warn);font-size:13px}
 .foot{display:flex;justify-content:space-between;align-items:center;gap:8px}
 .savebar{position:sticky;bottom:0;margin:16px -16px 0;padding:12px 16px;background:var(--bg);border-top:1px solid var(--line);display:flex;gap:12px;align-items:center;flex-wrap:wrap}
-#pwCard input{max-width:420px}#login{max-width:380px;margin:40px auto}#login p{margin:0 0 12px}
+#pwCard input{max-width:420px}.step{font-weight:600;font-size:14px;margin:16px 0 8px}.okbox{display:flex;width:fit-content;align-items:center;gap:8px;color:var(--ok);font-weight:600;margin:4px 0 0;padding:8px 12px;border-radius:8px;background:color-mix(in srgb,var(--ok) 12%,transparent)}#login{max-width:380px;margin:40px auto}#login p{margin:0 0 12px}
 code{word-break:break-all}[hidden]{display:none!important}
 </style></head><body><main>
 <header><div><h1>WebSpeak3 Admin</h1><p class="meta" id="stat" hidden></p></div><div class="tools">
@@ -394,13 +394,13 @@ code{word-break:break-all}[hidden]{display:none!important}
 <p style="display:flex;gap:8px;flex-wrap:wrap"><input id="offCode" inputmode="numeric" autocomplete="off" maxlength="6" style="max-width:9em"><input id="offPw" type="password" autocomplete="current-password" style="max-width:16em"><button type="button" id="offBtn" class="second" data-i18n="turnOff"></button></p>
 <p class="err" id="offErr"></p></div>
 <button class="plain" id="genTotp" type="button" data-i18n="gen"></button><div id="totpOut" hidden>
-<p class="help" data-i18n="step1"></p>
+<p class="step" data-i18n="step1"></p>
 <p><img id="totpQr" alt="QR" style="image-rendering:pixelated;background:#fff;padding:4px;border-radius:6px;max-width:100%"></p>
 <p class="help"><span data-i18n="cantScan"></span> <code id="totpSecret"></code></p>
-<p class="help" data-i18n="step2"></p>
+<p class="step" data-i18n="step2"></p>
 <p style="display:flex;gap:8px"><input id="totpCheck" inputmode="numeric" autocomplete="off" maxlength="6" style="max-width:9em"><button type="button" id="totpCheckBtn" class="second" data-i18n="check"></button></p>
 <p class="err" id="totpCheckErr"></p>
-<div id="totpDone" hidden><p class="help" data-i18n="step3"></p>
+<div id="totpDone" hidden><p class="okbox" data-i18n="codeOk"></p><p class="step" data-i18n="step3"></p>
 <p style="display:flex;gap:8px;flex-wrap:wrap"><input id="onPw" type="password" autocomplete="current-password" style="max-width:16em"><button type="button" id="onBtn" data-i18n="turnOn"></button></p>
 <p class="err" id="onErr"></p>
 <p class="help"><span data-i18n="envAlt"></span> <code id="totpEnv"></code></p></div></div></div>
@@ -431,7 +431,7 @@ const T = {
     statConn: (n) => n + " connected", statUp: "up ", statVer: "version ",
     gen: "Generate a new secret", step1: "1. Scan this code with your authenticator app (Google Authenticator, Aegis, 2FAS, ...):", cantScan: "Can't scan? Enter the secret manually:",
     step2: "2. Enter the 6-digit code the app now shows for WebSpeak3:", check: "Check", codeWrong: "Code doesn\\u2019t match. Wait for the next code, check the phone\\u2019s clock, or scan again.",
-    step3: "\\u2713 Code is correct. 3. Confirm with your password to switch 2FA on.",
+    codeOk: "\\u2713 Code is correct", step3: "3. Confirm with your password to switch 2FA on:",
     credErr: { wrong_password: "Wrong password.", code_wrong: "Wrong code.", weak_password: "At least 10 characters.", rate_limited: "Too many attempts, try again in 15 minutes." },
     aboutTitle: "How this works", about: "Changes apply immediately, except in \\u201cRestart required\\u201d. They override .env and are stored in admin-config.json (ADMIN_CONFIG_FILE). \\u201cReset\\u201d returns a setting to its .env value. Password and 2FA changes go to admin-auth.json; deleting that file goes back to .env (e.g. if you are locked out).",
     search: "Search settings\\u2026", noHits: "No matching settings.", std: "default",
@@ -455,7 +455,7 @@ const T = {
     statConn: (n) => n + " verbunden", statUp: "l\\u00e4uft seit ", statVer: "Version ",
     gen: "Neues Secret erzeugen", step1: "1. Diesen Code mit der Authenticator-App scannen (Google Authenticator, Aegis, 2FAS, ...):", cantScan: "Scannen klappt nicht? Secret von Hand eingeben:",
     step2: "2. Den 6-stelligen Code eingeben, den die App jetzt f\\u00fcr WebSpeak3 anzeigt:", check: "Pr\\u00fcfen", codeWrong: "Code passt nicht. Auf den n\\u00e4chsten Code warten, die Uhrzeit am Handy pr\\u00fcfen oder neu scannen.",
-    step3: "\\u2713 Code stimmt. 3. Mit deinem Passwort best\\u00e4tigen, um 2FA einzuschalten.",
+    codeOk: "\\u2713 Code stimmt", step3: "3. Mit deinem Passwort best\\u00e4tigen, um 2FA einzuschalten:",
     credErr: { wrong_password: "Falsches Passwort.", code_wrong: "Falscher Code.", weak_password: "Mindestens 10 Zeichen.", rate_limited: "Zu viele Versuche, in 15 Minuten erneut probieren." },
     aboutTitle: "So funktioniert's", about: "\\u00c4nderungen gelten sofort, au\\u00dfer unter \\u201eNeustart n\\u00f6tig\\u201c. Sie \\u00fcberschreiben die .env und liegen in admin-config.json (ADMIN_CONFIG_FILE). \\u201eZur\\u00fccksetzen\\u201c stellt den Wert aus der .env wieder her. Passwort und 2FA aus dem Panel liegen in admin-auth.json; wer die Datei l\\u00f6scht, ist wieder bei der .env (z. B. wenn man sich ausgesperrt hat).",
     search: "Einstellungen suchen\\u2026", noHits: "Keine passende Einstellung.", std: "Standardwert",
