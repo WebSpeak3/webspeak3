@@ -50,8 +50,10 @@ const allowedServers = () =>
 // as-is. Deliberately not full URL parsing - `host` here is never a URL.
 function stripPort(host: string): string {
   if (host.startsWith("[")) {
-    const end = host.indexOf("]");
-    return end === -1 ? host : host.slice(1, end);
+    // Only "[v6]" or "[v6]:port"; anything after "]" would otherwise be
+    // ignored here but still reach the connector ("[allowed]evil.tld").
+    const m = /^\[([^\]]*)\](?::\d+)?$/.exec(host);
+    return m ? m[1] : host;
   }
   const i = host.lastIndexOf(":");
   return i !== -1 && /^\d+$/.test(host.slice(i + 1)) ? host.slice(0, i) : host;
@@ -708,6 +710,11 @@ wss.on("connection", (socket: WebSocket, req: IncomingMessage) => {
   // One browser WebSocket ↔ one Rust connector. Multi-join in the UI opens
   // multiple /ws connections in parallel (one per server tab).
   let connection: Ts3Connection | undefined;
+  // Message handlers are async and run concurrently, so a connect can still be
+  // awaiting when a newer connect or the close arrives. Only the newest
+  // connect on an open socket may spawn a connector, else one leaks.
+  let closed = false;
+  let connectGen = 0;
 
   // Full: accept and say so, since a browser can't read why an upgrade was refused.
   if (maxConnections() > 0 && wss.clients.size > maxConnections()) {
@@ -791,17 +798,16 @@ wss.on("connection", (socket: WebSocket, req: IncomingMessage) => {
           }
           socket.send(JSON.stringify({ type: "turnstilePass", pass: issuePass(ip) }));
         }
-        // Replacing a connection on the same socket: tear down the previous
-        // connector so we don't leak processes.
-        if (connection) {
-          try {
-            await connection.disconnect();
-          } catch {
-            /* ignore */
-          }
-          liveConnections.delete(connection);
-          connection = undefined;
+        // Replacing a connection on the same socket: take the previous one
+        // out before awaiting its teardown, so no other handler sees it.
+        const gen = ++connectGen;
+        const prev = connection;
+        connection = undefined;
+        if (prev) {
+          liveConnections.delete(prev);
+          await prev.disconnect().catch(() => {});
         }
+        if (closed || gen !== connectGen) break;
         const options: Ts3ConnectOptions = {
           host: msg.host,
           nickname: msg.nickname,
@@ -1095,9 +1101,13 @@ wss.on("connection", (socket: WebSocket, req: IncomingMessage) => {
         break;
       }
       case "disconnect": {
-        await connection?.disconnect(msg.message ?? "");
-        if (connection) liveConnections.delete(connection);
+        // Same as above: detach first, a connect may arrive while this awaits.
+        const current = connection;
         connection = undefined;
+        if (current) {
+          liveConnections.delete(current);
+          await current.disconnect(msg.message ?? "");
+        }
         break;
       }
       default:
@@ -1113,7 +1123,11 @@ wss.on("connection", (socket: WebSocket, req: IncomingMessage) => {
     if (remaining > 0) connectionsPerIp.set(ip, remaining);
     else connectionsPerIp.delete(ip);
     heartbeats.delete(socket);
-    if (connection) liveConnections.delete(connection);
-    connection?.disconnect();
+    closed = true;
+    if (connection) {
+      liveConnections.delete(connection);
+      void connection.disconnect().catch(() => {});
+      connection = undefined;
+    }
   });
 });
