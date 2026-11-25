@@ -63,6 +63,27 @@ async fn ft_pace(limit: &AtomicU64, bytes: usize, started: std::time::Instant) {
 		tokio::time::sleep(rest).await;
 	}
 }
+/// Upload bodies held at once (waiting for the server or being sent, which
+/// ftlimit can stretch to days). Without a cap a client could park any
+/// amount of memory in the connector.
+const MAX_UPLOADS_HELD: u64 = 2 * MAX_UPLOAD_BYTES;
+static UPLOADS_HELD: AtomicU64 = AtomicU64::new(0);
+
+/// A share of MAX_UPLOADS_HELD, given back when dropped.
+struct HeldUpload(u64);
+impl Drop for HeldUpload {
+	fn drop(&mut self) {
+		UPLOADS_HELD.fetch_sub(self.0, Ordering::Relaxed);
+	}
+}
+fn hold_upload(size: u64) -> Option<HeldUpload> {
+	UPLOADS_HELD
+		.fetch_update(Ordering::Relaxed, Ordering::Relaxed, |held| (held + size <= MAX_UPLOADS_HELD).then_some(held + size))
+		.ok()
+		.map(|_| HeldUpload(size))
+}
+const UPLOADS_BUSY: &str = "Upload refused: too many uploads in progress, try again when they are done";
+
 /// Half-received chunked uploads per connection - each can hold up to
 /// MAX_UPLOAD_BYTES until it completes.
 const MAX_PARTIAL_UPLOADS: usize = 4;
@@ -1201,7 +1222,7 @@ async fn run(args: Args) -> Result<()> {
 	// (StreamItem::FileDownload/FileUpload below); these just remember which
 	// request that stream belongs to.
 	let mut pending_downloads: HashMap<u16, (u64, String)> = HashMap::new();
-	let mut pending_uploads: HashMap<u16, (u64, String, Vec<u8>)> = HashMap::new();
+	let mut pending_uploads: HashMap<u16, (u64, String, Vec<u8>, HeldUpload)> = HashMap::new();
 	// Chunked uploads still arriving from the browser: (cid, path) -> (total size, bytes so far).
 	let mut partial_uploads: HashMap<(u64, String), (u64, Vec<u8>)> = HashMap::new();
 	// Set by "permissionlist" while waiting to emit the full permission
@@ -2333,9 +2354,19 @@ async fn run(args: Args) -> Result<()> {
 						) {
 							(Ok(cid), Ok(bytes)) => {
 								let size = bytes.len() as u64;
+								let held = if size > MAX_UPLOAD_BYTES { None } else { hold_upload(size) };
+								let Some(held) = held else {
+									let message = if size > MAX_UPLOAD_BYTES {
+										format!("Upload refused: {path} is larger than {} KiB", MAX_UPLOAD_BYTES >> 10)
+									} else {
+										UPLOADS_BUSY.into()
+									};
+									emit(&Event::TransferError { message, cid, path: path.to_string() });
+									continue;
+								};
 								match con.upload_file(ChannelId(cid), path, None, size, true, false) {
 									Ok(handle) => {
-										pending_uploads.insert(handle.0, (cid, path.to_string(), bytes));
+										pending_uploads.insert(handle.0, (cid, path.to_string(), bytes, held));
 									}
 									Err(e) => emit(&Event::TransferError {
 										message: format!("Upload failed: {e}"),
@@ -2349,9 +2380,13 @@ async fn run(args: Args) -> Result<()> {
 					} else if let Some(rest) = l.strip_prefix("ftuploadchunk ") {
 						match take_upload_chunk(&mut partial_uploads, rest) {
 							Ok(Some((cid, path, bytes))) => {
+								let Some(held) = hold_upload(bytes.len() as u64) else {
+									emit(&Event::TransferError { message: UPLOADS_BUSY.into(), cid, path });
+									continue;
+								};
 								match con.upload_file(ChannelId(cid), &path, None, bytes.len() as u64, true, false) {
 									Ok(handle) => {
-										pending_uploads.insert(handle.0, (cid, path, bytes));
+										pending_uploads.insert(handle.0, (cid, path, bytes, held));
 									}
 									Err(e) => emit(&Event::TransferError { message: format!("Upload failed: {e}"), cid, path }),
 								}
@@ -3244,10 +3279,11 @@ async fn run(args: Args) -> Result<()> {
 					}
 				}
 				Some(Ok(StreamItem::FileUpload(handle, result))) => {
-					if let Some((cid, path, data)) = pending_uploads.remove(&handle.0) {
+					if let Some((cid, path, data, held)) = pending_uploads.remove(&handle.0) {
 						let seek = result.seek_position as usize;
 						let mut stream = result.stream;
 						tokio::spawn(async move {
+							let _held = held;
 							let slice = if seek < data.len() { &data[seek..] } else { &[][..] };
 							for piece in slice.chunks(TRANSFER_CHUNK_BYTES) {
 								let started = std::time::Instant::now();
@@ -3264,7 +3300,7 @@ async fn run(args: Args) -> Result<()> {
 				Some(Ok(StreamItem::FiletransferFailed(handle, e))) => {
 					let failed = pending_downloads
 						.remove(&handle.0)
-						.or_else(|| pending_uploads.remove(&handle.0).map(|(cid, path, _)| (cid, path)));
+						.or_else(|| pending_uploads.remove(&handle.0).map(|(cid, path, ..)| (cid, path)));
 					if let Some((cid, path)) = failed {
 						emit(&Event::TransferError { message: format!("File transfer failed: {e}"), cid, path });
 					}
@@ -3330,6 +3366,17 @@ async fn run(args: Args) -> Result<()> {
 #[cfg(test)]
 mod tests {
 	use super::*;
+
+	#[test]
+	fn held_uploads_are_capped_and_released() {
+		let a = hold_upload(MAX_UPLOAD_BYTES).unwrap();
+		let b = hold_upload(MAX_UPLOAD_BYTES).unwrap();
+		assert!(hold_upload(1).is_none());
+		drop(a);
+		assert!(hold_upload(MAX_UPLOAD_BYTES).is_some());
+		drop(b);
+		assert_eq!(UPLOADS_HELD.load(Ordering::Relaxed), 0);
+	}
 
 	fn chunk(offset: u64, total: u64, data: &[u8]) -> String {
 		format!("7\t{offset}\t{total}\t/a b.txt\t{}", base64::engine::general_purpose::STANDARD.encode(data))
