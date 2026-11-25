@@ -59,3 +59,38 @@ test("no connector outlives its WebSocket", { timeout: 60_000 }, async () => {
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+test("ALLOWED_SERVERS can't be bypassed with a bracketed prefix", { timeout: 30_000 }, async () => {
+  const dir = mkdtempSync(path.join(tmpdir(), "ws3-allow-"));
+  const pids = path.join(dir, "pids");
+  const fake = path.join(dir, "fake-connector.sh");
+  writeFileSync(fake, `#!/bin/sh\necho $$ >> '${pids}'\ncat > /dev/null\n`);
+  chmodSync(fake, 0o755);
+  const port = await freePort();
+  const gw = spawn(process.execPath, [INDEX], {
+    cwd: dir,
+    env: { PATH: process.env.PATH, PORT: String(port), WEB_STATIC: "0", TELEMETRY: "0", CONNECTOR_BIN: fake, ALLOWED_SERVERS: "ts.example.com" },
+    stdio: "ignore",
+  });
+  try {
+    for (let i = 0; i < 50; i++) { try { await fetch(`http://127.0.0.1:${port}/api/features`); break; } catch { await wait(100); } }
+    const reply = async (host) => {
+      const ws = new WebSocket(`ws://127.0.0.1:${port}/ws`);
+      const msgs = [];
+      ws.onmessage = (e) => msgs.push(JSON.parse(e.data));
+      await new Promise((ok, fail) => { ws.onopen = ok; ws.onerror = fail; });
+      ws.send(JSON.stringify({ type: "connect", host, nickname: "dummy" }));
+      await wait(500);
+      ws.close();
+      return msgs.find((m) => m.type === "error")?.message ?? "";
+    };
+    for (const host of ["[ts.example.com]evil.tld", "[ts.example.com]evil.tld:9987", "evil.tld"]) {
+      assert.match(await reply(host), /not allowed/, host);
+    }
+    assert.doesNotMatch(await reply("ts.example.com:9987"), /not allowed/);
+    assert.equal(existsSync(pids) ? readFileSync(pids, "utf8").split("\n").filter(Boolean).length : 0, 1, "only the allowed host spawned a connector");
+  } finally {
+    await new Promise((ok) => { gw.once("exit", ok); gw.kill("SIGTERM"); });
+    rmSync(dir, { recursive: true, force: true });
+  }
+});

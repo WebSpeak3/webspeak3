@@ -50,8 +50,10 @@ const allowedServers = () =>
 // as-is. Deliberately not full URL parsing - `host` here is never a URL.
 function stripPort(host: string): string {
   if (host.startsWith("[")) {
-    const end = host.indexOf("]");
-    return end === -1 ? host : host.slice(1, end);
+    // Only "[v6]" or "[v6]:port"; anything after "]" would otherwise be
+    // ignored here but still reach the connector ("[allowed]evil.tld").
+    const m = /^\[([^\]]*)\](?::\d+)?$/.exec(host);
+    return m ? m[1] : host;
   }
   const i = host.lastIndexOf(":");
   return i !== -1 && /^\d+$/.test(host.slice(i + 1)) ? host.slice(0, i) : host;
