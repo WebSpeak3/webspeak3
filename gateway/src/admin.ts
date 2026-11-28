@@ -11,11 +11,10 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import type { TLSSocket } from "node:tls";
 import { createHash, createHmac, randomBytes, scrypt, timingSafeEqual } from "node:crypto";
 import { readFileSync } from "node:fs";
-import { rename, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
 import qrcode from "qrcode-generator";
-import { clientIp, createRateLimiter } from "./net.js";
+import { clientIp, createRateLimiter, writeFileAtomic } from "./net.js";
 import { describeSettings, updateSettings, validate } from "./config.js";
 
 const ADMIN_USER = process.env.ADMIN_USER ?? "";
@@ -36,9 +35,7 @@ try {
 }
 const totpSecret = () => auth.totpSecret ?? ENV_TOTP;
 async function saveAuth(next: typeof auth) {
-  const tmp = `${AUTH_FILE}.${process.pid}.tmp`;
-  await writeFile(tmp, JSON.stringify(next, null, 2), { mode: 0o600 });
-  await rename(tmp, AUTH_FILE);
+  await writeFileAtomic(AUTH_FILE, JSON.stringify(next, null, 2), 0o600);
   auth = next;
 }
 

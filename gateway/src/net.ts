@@ -1,4 +1,5 @@
 import type { IncomingMessage } from "node:http";
+import { rename, writeFile } from "node:fs/promises";
 
 // Behind a reverse proxy / tunnel every request arrives from the proxy's own
 // address, so per-IP limits would lump all users into one bucket. Only set
@@ -37,4 +38,22 @@ export function createRateLimiter(limit: number | (() => number), windowMs: numb
     hits.set(key, recent);
     return recent.length > (typeof limit === "function" ? limit() : limit);
   };
+}
+
+/** Write-then-rename, one write at a time per file. Concurrent requests used
+ *  to share one `.tmp` path: one rename won, the others failed with ENOENT,
+ *  and overlapping writes could leave a mangled file. Queued, the last caller's
+ *  data always lands last. */
+const writeQueues = new Map<string, Promise<void>>();
+export function writeFileAtomic(file: string, data: string, mode?: number): Promise<void> {
+  const run = async () => {
+    const tmp = `${file}.tmp`;
+    await writeFile(tmp, data, { encoding: "utf-8", mode });
+    await rename(tmp, file);
+  };
+  const done = (writeQueues.get(file) ?? Promise.resolve()).then(run);
+  const tail = done.catch(() => {});
+  writeQueues.set(file, tail);
+  void tail.then(() => { if (writeQueues.get(file) === tail) writeQueues.delete(file); });
+  return done;
 }

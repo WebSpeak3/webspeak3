@@ -8,9 +8,9 @@
 // One JSON file per account in SYNC_DATA_DIR. Only served by sync-server.ts.
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
-import { mkdir, readdir, readFile, rename, rm, writeFile } from "node:fs/promises";
+import { mkdir, readdir, readFile, rm } from "node:fs/promises";
 import path from "node:path";
-import { clientIp, createRateLimiter } from "./net.js";
+import { clientIp, createRateLimiter, writeFileAtomic } from "./net.js";
 
 const SYNC_DATA_DIR = process.env.SYNC_DATA_DIR;
 const SYNC_ALLOWED_ORIGIN = process.env.SYNC_ALLOWED_ORIGIN ?? "*";
@@ -76,9 +76,7 @@ async function load(id: string): Promise<Account | null> {
 }
 
 async function save(id: string, account: Account) {
-  const tmp = `${file(id)}.tmp`;
-  await writeFile(tmp, JSON.stringify(account), "utf-8");
-  await rename(tmp, file(id));
+  await writeFileAtomic(file(id), JSON.stringify(account));
 }
 
 // Writes to one account run one after another, so the version check can't race.

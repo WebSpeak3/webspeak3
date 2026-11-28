@@ -11,7 +11,7 @@
 // Deliberately absent: CONNECTOR_BIN (would be code execution), ALLOW_PRIVATE_TARGETS (opens the
 // operator's LAN), and the admin credentials themselves.
 import { readFileSync } from "node:fs";
-import { rename, writeFile } from "node:fs/promises";
+import { writeFileAtomic } from "./net.js";
 import path from "node:path";
 
 export type SettingKind = "number" | "bool" | "list" | "text" | "secret";
@@ -116,9 +116,7 @@ export async function updateSettings(changes: Record<string, string | null>): Pr
     if (value === null) delete next[key];
     else next[key] = value;
   }
-  const tmp = `${CONFIG_FILE}.${process.pid}.tmp`;
-  await writeFile(tmp, JSON.stringify(next, null, 2), { mode: 0o600 });
-  await rename(tmp, CONFIG_FILE);
+  await writeFileAtomic(CONFIG_FILE, JSON.stringify(next, null, 2), 0o600);
   overrides = next;
   apply();
 }

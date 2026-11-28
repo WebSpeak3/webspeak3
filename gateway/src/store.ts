@@ -11,10 +11,10 @@
 // touched. It has zero private modifications, so the overlay just copies it
 // verbatim; only index.ts's small SQLite-persistence sections need patching.
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { readFile, rename, writeFile } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import { timingSafeEqual, randomUUID } from "node:crypto";
 import path from "node:path";
-import { clientIp, createRateLimiter } from "./net.js";
+import { clientIp, createRateLimiter, writeFileAtomic } from "./net.js";
 
 const storeAllowedOrigin = () => process.env.STORE_ALLOWED_ORIGIN || "*";
 // Plain JSON file (whole-array read-modify-write, not JSON-lines like
@@ -134,9 +134,7 @@ async function saveStoreThemes(themes: StoreTheme[]): Promise<void> {
   storeCache = themes;
   // Write-then-rename: a crash mid-write must not leave a truncated file,
   // which loadStoreThemes() would read as "no themes" and then overwrite.
-  const tmp = `${STORE_DATA_FILE}.tmp`;
-  await writeFile(tmp, JSON.stringify(themes), "utf-8");
-  await rename(tmp, STORE_DATA_FILE);
+  await writeFileAtomic(STORE_DATA_FILE, JSON.stringify(themes));
 }
 
 export function isAdminRequest(req: IncomingMessage): boolean {

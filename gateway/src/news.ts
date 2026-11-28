@@ -13,7 +13,8 @@
 //
 // Like store.ts, this file has zero private modifications.
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { readFile, rename, writeFile } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
+import { writeFileAtomic } from "./net.js";
 import { randomUUID } from "node:crypto";
 import { isAdminRequest, latestPublicTheme } from "./store.js";
 
@@ -43,9 +44,7 @@ async function load(): Promise<TextItem[]> {
 }
 
 async function save(items: TextItem[]) {
-  const tmp = `${NEWS_DATA_FILE}.tmp`;
-  await writeFile(tmp, JSON.stringify(items), "utf-8");
-  await rename(tmp, NEWS_DATA_FILE!);
+  await writeFileAtomic(NEWS_DATA_FILE!, JSON.stringify(items));
   cache = items;
 }
 

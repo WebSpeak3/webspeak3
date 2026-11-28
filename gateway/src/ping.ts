@@ -4,8 +4,8 @@
 // row per instance id: version, first and last seen. No IP addresses, no
 // request log. The admin view returns counts only.
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { readFile, rename, writeFile } from "node:fs/promises";
-import { clientIp, createRateLimiter } from "./net.js";
+import { readFile } from "node:fs/promises";
+import { clientIp, createRateLimiter, writeFileAtomic } from "./net.js";
 import { isAdminRequest } from "./store.js";
 
 const PING_DATA_FILE = process.env.PING_DATA_FILE;
@@ -36,9 +36,7 @@ async function save(instances: Record<string, Instance>) {
   // Instances silent for 90 days are gone for good.
   const cutoff = Date.now() - 90 * DAY_MS;
   for (const [id, i] of Object.entries(instances)) if (Date.parse(i.lastSeen) < cutoff) delete instances[id];
-  const tmp = `${PING_DATA_FILE}.tmp`;
-  await writeFile(tmp, JSON.stringify(instances), "utf-8");
-  await rename(tmp, PING_DATA_FILE!);
+  await writeFileAtomic(PING_DATA_FILE!, JSON.stringify(instances));
 }
 
 function json(res: ServerResponse, status: number, body: unknown) {
